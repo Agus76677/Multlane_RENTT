@@ -11,7 +11,7 @@ output[`DATA_PACK-1:0] d_in_bus
 wire [`DATA_WIDTH-1:0] bf_out [0:2*`P-1];
 wire [`MAP-1:0] sel_BI [0:2*`P-1];
 wire [`MAP-1:0] sel_BI_temp [0:2*`P-1];
-wire [`BI_PACK-1:0] sel_BI_temp_bus;
+reg [`DATA_WIDTH-1:0] d_in [0:2*`P-1];
 
 // 解包，打包
 genvar i;
@@ -21,19 +21,27 @@ generate
     assign bf_out[i] = bf_out_bus[i*`DATA_WIDTH + `DATA_WIDTH-1 : i*`DATA_WIDTH];
     assign sel_BI[i] = sel_BI_bus[i*`MAP + `MAP-1 : i*`MAP];
     shift #(.SHIFT(`L+1),.data_width(`MAP)) shif1 (.clk(clk),.rst(rst),.din(sel_BI[i]),.dout(sel_BI_temp[i]));
-    assign sel_BI_temp_bus[i*`MAP + `MAP-1 : i*`MAP] = sel_BI_temp[i];
+   
+    // 打包输出总线
+    assign d_in_bus[i*`DATA_WIDTH + `DATA_WIDTH-1 : i*`DATA_WIDTH] = d_in[i]; 
   end
 endgenerate
 
-permute_gather #(
-  .N   (2*`P),
-  .W   (`DATA_WIDTH),
-  .SELW(`MAP)
-) u_rbfu_out_gather (
-  .in_bus     (bf_out_bus),
-  .sel_out_bus(sel_BI_temp_bus),
-  .out_bus    (d_in_bus)
-);
+genvar k;
+generate
+  for(k = 0; k < 2*`P; k = k + 1) begin : gen_new_address
+    integer j;
+    always @(*) begin
+      d_in[k] = 'b0;
+      // 对于每个可能的选择索引，检查并赋值
+      for(j = 0; j < 2*`P; j = j + 1) begin
+          if(sel_BI_temp[k] == j) begin
+              d_in[k] = bf_out[j];
+          end
+      end
+    end
+  end
+endgenerate
 
 endmodule
 

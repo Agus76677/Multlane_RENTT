@@ -6,15 +6,36 @@ input [`BI_PACK-1:0] sel_BI_bus,
 output [`BA_PACK-1:0] new_address_bus
 );
 
-permute_gather #(
-  .N   (2*`P),
-  .W   (`ADDR_WIDTH),
-  .SELW(`MAP)
-) u_bank_gather (
-  .in_bus     (BA_bus),
-  .sel_out_bus(sel_BI_bus),
-  .out_bus    (new_address_bus)
-);
+// 解包输入总线
+wire [`ADDR_WIDTH-1:0] BA [0:2*`P-1];
+wire [`MAP-1:0] sel_BI [0:2*`P-1];
+reg [`ADDR_WIDTH-1:0] new_address [0:2*`P-1];
+
+// 解包，打包
+genvar i;
+generate
+  for(i = 0; i < 2*`P; i = i + 1) begin : unpack_0
+    assign BA[i] = BA_bus[i*`ADDR_WIDTH+`ADDR_WIDTH-1 : i*`ADDR_WIDTH];
+    assign sel_BI[i] = sel_BI_bus[i*`MAP+`MAP-1 : i*`MAP];
+    assign new_address_bus[i*`ADDR_WIDTH+`ADDR_WIDTH-1 : i*`ADDR_WIDTH] = new_address[i];
+  end
+endgenerate
+
+genvar k;
+generate
+  for(k = 0; k < 2*`P; k = k + 1) begin : gen_new_address
+    integer j;
+    always @(*) begin
+      new_address[k] = 'b0;
+      // 对于每个可能的选择索引，检查并赋值
+      for(j = 0; j < 2*`P; j = j + 1) begin
+        if(sel_BI[k] == j) begin
+          new_address[k] = BA[j];
+        end
+      end
+    end
+  end
+endgenerate
 
 endmodule
 
