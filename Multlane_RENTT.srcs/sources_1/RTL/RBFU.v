@@ -99,8 +99,10 @@ shift#(.SHIFT(`L),.data_width(`DATA_WIDTH)) REBFU_O1_shfit(.clk(clk),.rst(rst),.
 
 wire [`DATA_WIDTH-1:0] w0_temp;
 wire [`DATA_WIDTH-1:0] w1_temp;
-assign w0_temp = opcode ==`PWM0 || opcode ==`PWM1? a0 : w0;
-assign w1_temp = opcode ==`PWM0 ? b0 : w1;
+wire is_pwm;
+assign is_pwm = ((opcode == `PWM0) || (opcode == `PWM1));
+assign w0_temp = is_pwm ? a0 : w0;
+assign w1_temp = (opcode == `PWM0) ? b0 : w1;
 
 //Modmul模乘器
 wire [`DATA_WIDTH-1:0] R0;
@@ -271,8 +273,10 @@ wire [`DATA_WIDTH-1:0] w0_temp;
 wire [`DATA_WIDTH-1:0] w1_temp;
 wire [`DATA_WIDTH-1:0] w0_ff1;
 wire [`DATA_WIDTH-1:0] w1_ff1;
-assign w0_temp = opcode ==`PWM0 || opcode ==`PWM1? a0 : w0;
-assign w1_temp = opcode ==`PWM0 ? b0 : w1;
+wire is_pwm;
+assign is_pwm = ((opcode == `PWM0) || (opcode == `PWM1));
+assign w0_temp = is_pwm ? a0 : w0;
+assign w1_temp = (opcode == `PWM0) ? b0 : w1;
 DFF #(.data_width(`DATA_WIDTH)) w0ff1_inst(.clk(clk),.rst(rst),.d(w0_temp),.q(w0_ff1));
 DFF #(.data_width(`DATA_WIDTH)) w1ff1_inst(.clk(clk),.rst(rst),.d(w1_temp),.q(w1_ff1));
 
@@ -446,8 +450,10 @@ wire [`DATA_WIDTH-1:0] w0_temp;
 wire [`DATA_WIDTH-1:0] w1_temp;
 wire [`DATA_WIDTH-1:0] w0_ff1;
 wire [`DATA_WIDTH-1:0] w1_ff1;
-assign w0_temp = opcode ==`PWM0 || opcode ==`PWM1? a0 : w0;
-assign w1_temp = opcode ==`PWM0 ? b0 : w1;
+wire is_pwm;
+assign is_pwm = ((opcode == `PWM0) || (opcode == `PWM1));
+assign w0_temp = is_pwm ? a0 : w0;
+assign w1_temp = (opcode == `PWM0) ? b0 : w1;
 DFF #(.data_width(`DATA_WIDTH)) w0ff1_inst(.clk(clk),.rst(rst),.d(w0_temp),.q(w0_ff1));
 DFF #(.data_width(`DATA_WIDTH)) w1ff1_inst(.clk(clk),.rst(rst),.d(w1_temp),.q(w1_ff1));
 
@@ -621,8 +627,10 @@ wire [`DATA_WIDTH-1:0] w0_temp;
 wire [`DATA_WIDTH-1:0] w1_temp;
 wire [`DATA_WIDTH-1:0] w0_ff1;
 wire [`DATA_WIDTH-1:0] w1_ff1;
-assign w0_temp = opcode ==`PWM0 || opcode ==`PWM1? a0 : w0;
-assign w1_temp = opcode ==`PWM0 ? b0 : w1;
+wire is_pwm;
+assign is_pwm = ((opcode == `PWM0) || (opcode == `PWM1));
+assign w0_temp = is_pwm ? a0 : w0;
+assign w1_temp = (opcode == `PWM0) ? b0 : w1;
 DFF #(.data_width(`DATA_WIDTH)) w0ff1_inst(.clk(clk),.rst(rst),.d(w0_temp),.q(w0_ff1));
 DFF #(.data_width(`DATA_WIDTH)) w1ff1_inst(.clk(clk),.rst(rst),.d(w1_temp),.q(w1_ff1));
 
@@ -796,8 +804,10 @@ wire [`DATA_WIDTH-1:0] w0_temp;
 wire [`DATA_WIDTH-1:0] w1_temp;
 wire [`DATA_WIDTH-1:0] w0_ff1;
 wire [`DATA_WIDTH-1:0] w1_ff1;
-assign w0_temp = opcode ==`PWM0 || opcode ==`PWM1? a0 : w0;
-assign w1_temp = opcode ==`PWM0 ? b0 : w1;
+wire is_pwm;
+assign is_pwm = ((opcode == `PWM0) || (opcode == `PWM1));
+assign w0_temp = is_pwm ? a0 : w0;
+assign w1_temp = (opcode == `PWM0) ? b0 : w1;
 DFF #(.data_width(`DATA_WIDTH)) w0ff1_inst(.clk(clk),.rst(rst),.d(w0_temp),.q(w0_ff1));
 DFF #(.data_width(`DATA_WIDTH)) w1ff1_inst(.clk(clk),.rst(rst),.d(w1_temp),.q(w1_ff1));
 
@@ -969,8 +979,10 @@ wire [`DATA_WIDTH-1:0] w0_temp;
 wire [`DATA_WIDTH-1:0] w1_temp;
 wire [`DATA_WIDTH-1:0] w0_ff1;
 wire [`DATA_WIDTH-1:0] w1_ff1;
-assign w0_temp = opcode ==`PWM0 || opcode ==`PWM1? a0 : w0;
-assign w1_temp = opcode ==`PWM0 ? b0 : w1;
+wire is_pwm;
+assign is_pwm = ((opcode == `PWM0) || (opcode == `PWM1));
+assign w0_temp = is_pwm ? a0 : w0;
+assign w1_temp = (opcode == `PWM0) ? b0 : w1;
 DFF #(.data_width(`DATA_WIDTH)) w0ff1_inst(.clk(clk),.rst(rst),.d(w0_temp),.q(w0_ff1));
 DFF #(.data_width(`DATA_WIDTH)) w1ff1_inst(.clk(clk),.rst(rst),.d(w1_temp),.q(w1_ff1));
 

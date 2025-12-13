@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-`include "../../parameter.v"  
+`include "parameter.v"
 // `include "Hybrid_compress_Red.v"
 // `include "sel_nq.v"
 // `include "sel_n2q.v"
