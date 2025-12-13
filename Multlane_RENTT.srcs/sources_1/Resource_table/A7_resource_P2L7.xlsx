@@ -1,0 +1,48 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2024.1 (win64) Build 5076996 Wed May 22 18:37:14 MDT 2024
+| Date         : Wed Jun 25 22:48:42 2025
+| Host         : DESKTOP-00GQMPA running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 1 -file D:/VivadoProject/Multlane_RENTT/Multlane_RENTT.srcs/sources_1/Resource_table/resource_P2L7.xlsx
+| Design       : polytop_RE
+| Device       : xc7a200tffg1156-3
+| Speed File   : -3
+| Design State : Routed
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++-----------------------------------+----------------------+------------+------------+---------+------+-----+--------+--------+------------+
+|              Instance             |        Module        | Total LUTs | Logic LUTs | LUTRAMs | SRLs | FFs | RAMB36 | RAMB18 | DSP Blocks |
++-----------------------------------+----------------------+------------+------------+---------+------+-----+--------+--------+------------+
+| polytop_RE                        |                (top) |       1041 |        976 |       0 |   65 | 675 |      1 |      4 |          2 |
+|   (polytop_RE)                    |                (top) |          0 |          0 |       0 |    0 |   7 |      0 |      0 |          0 |
+|   dmux                            |      network_RBFU_in |        102 |        102 |       0 |    0 |   8 |      0 |      0 |          0 |
+|   fsm_inst                        |                  fsm |         33 |         31 |       0 |    2 |  32 |      0 |      0 |          0 |
+|   gen_addr_gen[0].addr_gen_inst   |             addr_gen |         82 |         82 |       0 |    0 |  31 |      0 |      0 |          0 |
+|   gen_addr_gen[0].memory_map_inst |           memory_map |          9 |          9 |       0 |    0 |  34 |      0 |      0 |          0 |
+|   gen_dff[0].bank_inst            |              bank__1 |          1 |          1 |       0 |    0 |   0 |      0 |      1 |          0 |
+|   gen_dff[0].dff_n0               |                shift |         12 |          4 |       0 |    8 |  16 |      0 |      0 |          0 |
+|   gen_dff[1].bank_inst            |              bank__2 |          1 |          1 |       0 |    0 |   0 |      0 |      1 |          0 |
+|   gen_dff[1].dff_n0               |              shift_0 |         12 |          4 |       0 |    8 |  16 |      0 |      0 |          0 |
+|   gen_dff[2].bank_inst            |              bank__3 |          1 |          1 |       0 |    0 |   0 |      0 |      1 |          0 |
+|   gen_dff[2].dff_n0               |              shift_1 |         12 |          4 |       0 |    8 |  16 |      0 |      0 |          0 |
+|   gen_dff[3].bank_inst            |                 bank |          1 |          1 |       0 |    0 |   0 |      0 |      1 |          0 |
+|   gen_dff[3].dff_n0               |              shift_2 |         12 |          4 |       0 |    8 |  16 |      0 |      0 |          0 |
+|   gen_rbfu[0].u_RBFU              |                 RBFU |        664 |        641 |       0 |   23 | 446 |      0 |      0 |          2 |
+|   m3                              |              arbiter |          6 |          6 |       0 |    0 |   0 |      0 |      0 |          0 |
+|   m6                              | tf_address_generator |          3 |          3 |       0 |    0 |  30 |      0 |      0 |          0 |
+|   mux1                            |      network_bank_in |         32 |         32 |       0 |    0 |   0 |      0 |      0 |          0 |
+|   mux3                            |     network_RBFU_out |         60 |         52 |       0 |    8 |  23 |      0 |      0 |          0 |
+|   rom0                            |               tf_ROM |          0 |          0 |       0 |    0 |   0 |      1 |      0 |          0 |
++-----------------------------------+----------------------+------------+------------+---------+------+-----+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+
