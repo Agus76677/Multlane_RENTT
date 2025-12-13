@@ -10,27 +10,37 @@ output [`DATA_PACK-1:0] rbfu_data_bus
    
 wire [`MAP-1:0] sel_BI [0:2*`P-1];
 wire [`MAP-1:0] sel_BI_temp [0:2*`P-1];
-wire [`BI_PACK-1:0] sel_BI_temp_bus;
+wire [`DATA_WIDTH-1:0] q [0:2*`P-1];
+reg  [`DATA_WIDTH-1:0] rbfu_data [0:2*`P-1];
 
 genvar i;
 generate
     for(i = 0; i < 2*`P; i = i + 1) begin : unpack_RBFU_in
         // 解包输入总线
         assign sel_BI[i] = sel_BI_bus[i*`MAP+`MAP-1 : i*`MAP];
+        assign q[i] = q_bus[i*`DATA_WIDTH+`DATA_WIDTH-1 : i*`DATA_WIDTH];
         DFF #(.data_width(`MAP)) dff_inst(.clk(clk),.rst(rst),.d(sel_BI[i]),.q(sel_BI_temp[i]));
-        assign sel_BI_temp_bus[i*`MAP+`MAP-1 : i*`MAP] = sel_BI_temp[i];
-    end
+        // 打包输出总线
+        assign rbfu_data_bus[i*`DATA_WIDTH+`DATA_WIDTH-1 : i*`DATA_WIDTH] = rbfu_data[i];
+    end 
 endgenerate
 
-permute_scatter #(
-    .N(2*`P),
-    .W(`DATA_WIDTH),
-    .SELW(`MAP)
-) rbfu_in_switch (
-    .in_bus(q_bus),
-    .sel_in_bus(sel_BI_temp_bus),
-    .out_bus(rbfu_data_bus)
-);
+// 生成DMUX
+genvar k;
+generate
+  for(k = 0; k < 2*`P; k = k + 1) begin : DMUX
+    integer j;
+    always @(*) begin
+         rbfu_data[k] = 12'b0;
+         // 对于每个可能的选择索引，检查并赋值
+        for(j = 0; j < 2*`P; j = j + 1) begin
+            if(sel_BI_temp[j] == k) begin
+                rbfu_data[k] = q[j];
+            end
+        end
+    end
+  end
+endgenerate
 
 endmodule
 

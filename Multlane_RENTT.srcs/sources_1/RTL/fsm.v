@@ -75,14 +75,9 @@ begin
         mode_state <= opcode;
 end
 
-wire is_ntt, is_intt;
-localparam [5:0] BANK_ROW6 = `BANK_ROW;
-assign is_ntt  = (opcode == `NTT);
-assign is_intt = (opcode == `INTT);
-
-assign stage_start = is_intt ? 6'd6 : 6'd0;
-assign stage_end   = is_ntt  ? 6'd6 : (is_intt ? 6'd0 : BANK_ROW6);
-assign group_end   = (is_ntt || is_intt) ? `S_END : 1;
+assign stage_start = opcode == `INTT ? 6 : 0;
+assign stage_end   = opcode == `NTT ?  6 :  opcode==`INTT? 0 : `BANK_ROW;
+assign group_end   = opcode == `NTT ||opcode == `INTT  ? `S_END :1;
 
 //译码单元
 always@(*)
