@@ -5,36 +5,24 @@ module arbiter(
     output [`BI_PACK-1:0] sel_BI_bus
 );
 
-wire [`MAP-1:0] BI [0:2*`P-1];
-reg  [`MAP-1:0] sel_BI [0:2*`P-1];
+wire [`BI_PACK-1:0] request_id_bus;
 
 genvar i_unpack;
 generate
-    for(i_unpack = 0; i_unpack < 2*`P; i_unpack = i_unpack + 1) begin : unpack_BI
-        assign BI[i_unpack] = BI_bus[i_unpack*`MAP+`MAP-1: i_unpack*`MAP];
+    for(i_unpack = 0; i_unpack < 2*`P; i_unpack = i_unpack + 1) begin : gen_request_id
+        assign request_id_bus[i_unpack*`MAP+`MAP-1: i_unpack*`MAP] = i_unpack[`MAP-1:0];
     end
 endgenerate
 
-genvar i_sel;
-generate
-    for(i_sel = 0; i_sel < 2*`P; i_sel = i_sel + 1) begin : gen_arbiter
-        integer j;
-        always@(*) begin
-            sel_BI[i_sel] = {`MAP{1'b0}}; // 默认值
-            // 检查每个输入是否匹配当前输出位置
-            for(j = 0; j < 2*`P; j = j + 1) begin
-                if(BI[j] == i_sel) begin
-                    sel_BI[i_sel] = j; // 找到匹配的输入索引
-                end
-            end
-        end
-    end
-    
-    // 将选择结果打包回输出总线
-    for(i_sel = 0; i_sel < 2*`P; i_sel = i_sel + 1) begin : pack_sel_BI
-        assign sel_BI_bus[i_sel*`MAP+`MAP-1 : i_sel*`MAP] = sel_BI[i_sel];
-    end
-endgenerate
+permute_scatter #(
+    .N(2*`P),
+    .W(`MAP),
+    .SELW(`MAP)
+) perm_inv (
+    .in_bus(request_id_bus),
+    .sel_in_bus(BI_bus),
+    .out_bus(sel_BI_bus)
+);
 
 endmodule
 
