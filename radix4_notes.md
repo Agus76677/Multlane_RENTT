@@ -26,8 +26,8 @@
 
 ## 3. Radix-4 DIT 迭代算法（用 φ 的 2N-th 根形式）
 采用 CFNTT 风格的 radix-4 DIT 表达：
-- φ：2N-th primitive root（即 512-th root），满足 φ^(2N) = 1
-- ω1：4-th primitive root（对应“i”的角色，用于 T3 的旋转）
+- φ：2N-th primitive root（即 512-th root），满足 φ^(2N) = 1，Kyber 下选 primitive_root=17 → φ = 17^((q-1)/(2N)) mod q
+- ω1：4-th primitive root（对应“i”的角色，用于 T3 的旋转），ω1 = φ^(N/4) mod q
 
 对每个 stage p：
 - J = 4^p
@@ -57,6 +57,12 @@ A[4kJ + j + 3J ] = (T1 - T3 * ω1) mod q
 - ω1 是常量（对 Kyber 固定），可用 CSA/常数乘优化，不一定强制占 DSP
 
 ## 4. Twiddle ROM 的组织（tf_ROM + tf_address_generator）
+radix-4 每 stage 的 j 取值范围：
+- stage0: j∈[0,1)
+- stage1: j∈[0,4)
+- stage2: j∈[0,16)
+- stage3: j∈[0,64)
+
 tf_address_generator 需要输出每个 butterfly 所需的 twiddle：
 - ωm^(2*(2j+1)), ωm^( (2j+1) ), ωm^(3*(2j+1)), 以及常量 ω1
 建议 ROM 以 “stage + j + lane_id” 组织成向量输出：
@@ -64,8 +70,9 @@ tf_address_generator 需要输出每个 butterfly 所需的 twiddle：
 - ROM 若带宽不足：优先“加宽一次性输出向量”，不要复制多个 ROM
 
 必须新增脚本 gen_tf_rom_radix4.py：
-- 输入：q, N, φ, ω1
-- 输出：tf_ROM.v（或 mem/hex 文件）+ debug 文本（逐 stage 打印前几项 twiddle）
+- 输入：q, N, φ, ω1（脚本内置：q=3329, primitive_root=17, φ/ω1 自动推导）
+- 输出：tf_ROM_radix4.v（mem 封装）+ tf_rom_radix4.mem + tf_rom_debug.txt（前几组便于 spot-check）
+- 生成顺序：按 stage 依次输出 j=0..4^stage-1 的向量，地址从 stage0 累加到 stage3。
 
 ## 5. RPMA conflict_free_map（地址映射必须以此为基线）
 地址 a -> (BI, BA)：
@@ -80,9 +87,9 @@ tf_address_generator 需要输出每个 butterfly 所需的 twiddle：
 - 满足 RAW：读写间隔至少 L+1
 
 ## 6. “改为基4需要改哪些点”清单（路线B）
-1) fsm：stage 0..3；每 stage 的循环/使能/finish 延时对齐按新流水重算  
-2) addr_gen：输出四点索引；stage0 stride=64；PWM 路径减少 mux  
-3) memory_map/arbiter/network_*：按 conflict_free_map 重新核对同拍无冲突；端口打包/lanes 对齐  
-4) tf_address_generator + tf_ROM：radix-4 twiddle 集合与地址规则重做；脚本自动生成 ROM 内容  
-5) RBFU：升级为 radix-4 butterfly（two-layer），保持 CSA/压缩树约减风格；DSP=4  
+1) fsm：stage 0..3；每 stage 的循环/使能/finish 延时对齐按新流水重算
+2) addr_gen：输出四点索引；stage0 stride=64；PWM 路径减少 mux
+3) memory_map/arbiter/network_*：按 conflict_free_map 重新核对同拍无冲突；端口打包/lanes 对齐
+4) tf_address_generator + tf_ROM：radix-4 twiddle 集合与地址规则重做；脚本自动生成 ROM 内容
+5) RBFU：升级为 radix-4 butterfly（two-layer），保持 CSA/压缩树约减风格；DSP=4
 6) polytop_RE 顶层：打包解包、lane 映射、shift 对齐常数按新总延迟重算
