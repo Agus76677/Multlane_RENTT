@@ -32,8 +32,9 @@ module polytop_RE(
 );
 
 //fsm port signal
-wire [5:0] i;
+wire [2:0] i;
 wire [6:0] s;
+wire [6:0] k;
 wire wen,ren,en;
 
 //address_generator port signal
@@ -91,6 +92,7 @@ fsm fsm_inst(
     .start                             (start                     ),//I
     .i                                 (i                         ),//O
     .s                                 (s                         ),//O
+    .k                                 (k                         ),//O
     .wen                               (wen                       ),//O
     .ren                               (ren                       ),//O
     .en                                (en                        ),//O
@@ -106,6 +108,7 @@ generate
             .rst                       (rst                       ),//I
             .i                         (i                         ),//I
             .s                         (s                         ),//I
+            .k                         (k                         ),//I
             .b                         (i_AG                      ),//I
             .opcode                    (opcode                    ),//I
             .ie0                       (old_ie0[i_AG]             ),//O
@@ -205,11 +208,13 @@ generate
             .clk                               (clk                       ),
             .rst                               (rst                       ),
             .rbfu_a0                           (rbfu_data[4*i_rbfu+0]     ),
-            .rbfu_b0                           (rbfu_data[4*i_rbfu+1]     ),
-            .rbfu_w0                           (wa[2*i_rbfu+0]            ),
-            .rbfu_a1                           (rbfu_data[4*i_rbfu+2]     ),
-            .rbfu_b1                           (rbfu_data[4*i_rbfu+3]     ),
-            .rbfu_w1                           (wa[2*i_rbfu+1]            ),
+            .rbfu_a1                           (rbfu_data[4*i_rbfu+1]     ),
+            .rbfu_a2                           (rbfu_data[4*i_rbfu+2]     ),
+            .rbfu_a3                           (rbfu_data[4*i_rbfu+3]     ),
+            .tf_w2                             (wa[0]                     ),
+            .tf_w1                             (wa[1]                     ),
+            .tf_w3                             (wa[2]                     ),
+            .tf_omega                          (wa[3]                     ),
             .opcode                            (opcode                    ),
             .Dout0                             (bf_out[4*i_rbfu+0]        ),
             .Dout1                             (bf_out[4*i_rbfu+1]        ),
@@ -245,7 +250,7 @@ tf_address_generator m6(
     .rst                               (rst                            ),//I
     .opcode                            (opcode                         ),//I
     .i                                 (i                              ),//I
-    .s                                 (s                              ),//I
+    .k                                 (k                              ),//I
     .tf_address                        (tf_address                     ) //O
 );
 
