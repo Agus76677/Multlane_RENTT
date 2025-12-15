@@ -1,8 +1,7 @@
-
 //------------编译定义-------------
-`define OP0  //P=2时
-// `define OP1  //P=4时
-// `define OP2  //P=8时    
+// `define OP0  //P=2时
+`define OP1  //P=4时
+// `define OP2  //P=8时
 // `define OP3  //P=16时
 
 // `define PIPE1  //L=1时
@@ -15,10 +14,18 @@
 // `define PIPE8  //L=8时
 
 //--------------操作类型------------
-`define NTT  2'b00 
-`define INTT 2'b01 
-`define PWM0 2'b10 
-`define PWM1 2'b11 
+`define NTT  2'b00
+`define INTT 2'b01
+`define PWM0 2'b10
+`define PWM1 2'b11
+
+//-------------Radix4 feature macros------------
+`define RADIX4_EN
+`define R4_STAGE_NUM 4
+`define ADDR_ROM_WIDTH 7
+`define ROM_DEPTH 85
+`define OFFSET_TF_INTT 0
+`define OFFSET_TF_PWM1 0
 
 //-------------参数定义------------
 // 根据OP宏自动配置P参数
@@ -56,21 +63,16 @@
 `endif
 
 `define MAP      $clog2(2*`P)
-`define P_SHIFT  $clog2(`P) 
+`define P_SHIFT  $clog2(`P)
 `define P_HALF   `P/2          //Parallel Execution Units Half
 `define BANK_ROW 256/(2*`P)-1 //Bank Row Size
-`define S_END    128-`P
 
 //pack unpack
 `define BI_PACK   (2*`P)*`MAP //pack size
-`define BA_PACK   8*(2*`P)    //pack size 
+`define BA_PACK   8*(2*`P)    //pack size
 `define DATA_PACK 12*(2*`P)  //data pack size
 
 //data size
 `define DATA_WIDTH 12
 `define ADDR_WIDTH 8   //data address width
 `define DEPTH      256 //bank depth
-`define ADDR_ROM_WIDTH 11-`P_SHIFT
-`define ROM_DEPTH   2048/`P       //ROM Depth
-`define OFFSET_TF_1 7*(128/`P) 
-`define OFFSET_TF_2 14*(128/`P) 

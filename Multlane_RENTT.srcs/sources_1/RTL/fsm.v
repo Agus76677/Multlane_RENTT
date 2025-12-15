@@ -1,173 +1,130 @@
 `timescale 1ns / 1ps
 `include "parameter.v"
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2025/06/18 10:27:11
-// Design Name: 
-// Module Name: fsm
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
+// Radix-4 FSM: stage0 stride=64 -> stage3 stride=1
 //////////////////////////////////////////////////////////////////////////////////
 
-
-module fsm(  
+module fsm(
 input                               clk    ,
 input                               rst    ,
 input              [   1:0]         opcode   ,
 input                               start  ,//Pulse signal
-output             [   5:0]         i      ,//max = 64-1
-output             [   6:0]         s      ,//max = 128-1
+output reg         [   2:0]         i      ,//stage index 0-3
+output reg         [   6:0]         s      ,//j_block base (step by P_HALF)
+output reg         [   6:0]         k      ,//k counter for twiddle address
 output                              wen    ,
 output                              ren    ,
 output                              en     ,
-output                              finish  
+output                              finish
 );
 
+localparam [1:0] ST_IDLE = 2'b00, ST_RUN = 2'b01;
+reg [1:0] state;
 reg wen_ff,ren_ff,en_ff;
 wire en_ff1;
-reg [1:0] mode_state;
-reg [5:0] i_ff;       //这里实际上是wire
-reg [6:0] s_ff;       //这里实际上是wire
 reg done_ff;
 reg start_ff;
-wire [5:0] stage_start,stage_end;
-wire [6:0] group_end;
 
-assign i = i_ff;
-assign s = s_ff;
-assign en = en_ff1|wen; 
+function [6:0] J_value;
+    input [2:0] stage;
+    begin
+        case(stage)
+            3'd0: J_value = 7'd64;
+            3'd1: J_value = 7'd16;
+            3'd2: J_value = 7'd4;
+            default: J_value = 7'd1;
+        endcase
+    end
+endfunction
+
+function [6:0] K_value;
+    input [2:0] stage;
+    begin
+        case(stage)
+            3'd0: K_value = 7'd1;
+            3'd1: K_value = 7'd4;
+            3'd2: K_value = 7'd16;
+            default: K_value = 7'd64;
+        endcase
+    end
+endfunction
+
+wire is_ntt  = (opcode == `NTT);
+wire is_intt = (opcode == `INTT);
+
+wire [6:0] J_cur = J_value(i);
+wire [6:0] K_cur = K_value(i);
+wire [6:0] j_block_last = ((J_cur + `P_HALF - 1)/`P_HALF) - 1'b1;
+
+assign en = en_ff1|wen;
 
 shift#(.SHIFT(`L+3),.data_width(1)) shif_wen(.clk(clk),.rst(rst),.din(wen_ff),.dout(wen));
 shift#(.SHIFT(`L+3),.data_width(1)) shif_finish(.clk(clk),.rst(rst),.din(done_ff),.dout(finish));
-
 shift#(.SHIFT(2),.data_width(1)) shif_en(.clk(clk),.rst(rst),.din(en_ff),.dout(en_ff1));
 shift#(.SHIFT(2),.data_width(1)) shif_ren(.clk(clk),.rst(rst),.din(ren_ff),.dout(ren));
-// DFF #(.data_width(1)) dff_en(.clk(clk),.rst(rst),.d(en_ff),.q(en_ff1));
-// DFF #(.data_width(1)) dff_ren(.clk(clk),.rst(rst),.d(ren_ff),.q(ren));
-// DFF #(.data_width(1)) dff_sel(.clk(clk),.rst(rst),.d(sel_ff),.q(sel));
 
-always @(posedge clk) 
-begin
-    if(rst)
-        start_ff <= 0;
-    else if(done_ff) //反压
-        start_ff <= 0;
+always @(posedge clk) begin
+    if (rst)
+        start_ff <= 1'b0;
+    else if(done_ff)
+        start_ff <= 1'b0;
     else if(start)
-        start_ff <=1;
+        start_ff <= 1'b1;
 end
 
-always@(posedge clk )
-begin
-    if(rst)
-        mode_state <= `NTT; //初始状态
-    else
-        mode_state <= opcode;
-end
-
-wire is_ntt, is_intt;
-localparam [5:0] BANK_ROW6 = `BANK_ROW;
-assign is_ntt  = (opcode == `NTT);
-assign is_intt = (opcode == `INTT);
-
-assign stage_start = is_intt ? 6'd6 : 6'd0;
-assign stage_end   = is_ntt  ? 6'd6 : (is_intt ? 6'd0 : BANK_ROW6);
-assign group_end   = (is_ntt || is_intt) ? `S_END : 1;
-
-//译码单元
-always@(*)
-begin
-    if(start_ff) 
-        case(mode_state)
-            `NTT:begin 
-                    en_ff = 1; 
-                    wen_ff = 1;
-                    ren_ff = 1;
-                    if((i_ff == stage_end)&&(s_ff == group_end))
-                        done_ff = 1; 
-                    else
-                        done_ff = 0; 
+always @(posedge clk) begin
+    if (rst) begin
+        state <= ST_IDLE;
+        i <= 0;
+        s <= 0;
+        k <= 0;
+    end else begin
+        case (state)
+            ST_IDLE: begin
+                done_ff <= 1'b0;
+                if (start_ff) begin
+                    state <= ST_RUN;
+                    i <= is_intt ? (`R4_STAGE_NUM-1) : 0;
+                    s <= 0;
+                    k <= 0;
                 end
-            `PWM0:begin 
-                    en_ff  = 1;
-                    wen_ff = 1;
-                    ren_ff = 1;
-                    if((i_ff == stage_end)&&(s_ff == group_end))
-                        done_ff = 1; 
-                    else 
-                        done_ff = 0; 
-                end
-            `PWM1:begin 
-                    en_ff  = 1;
-                    wen_ff = 1;
-                    ren_ff = 1;
-                    if((i_ff == stage_end)&&(s_ff == group_end))
-                        done_ff = 1; 
-                    else 
-                        done_ff = 0; 
-                end
-            `INTT:begin 
-                    en_ff = 1;
-                    wen_ff = 1;
-                    ren_ff = 1;
-                    if((i_ff == stage_end)&&(s_ff == group_end))
-                        done_ff = 1; 
-                    else 
-                        done_ff = 0; 
-                end
-            default:begin 
-                    done_ff=0;
-                    en_ff = 0;
-                    wen_ff = 0;
-                    ren_ff = 0; 
-                end
-        endcase
-    else begin 
-        done_ff=0;
-        en_ff = 0;
-        wen_ff = 0;
-        ren_ff = 0; 
-    end
-end
-
-always@(posedge clk)
-begin 
-    if(rst) begin
-        i_ff <= stage_start;
-        s_ff <= 0;          
-    end 
-    else if(start_ff) begin
-        if(s_ff== group_end) begin
-            s_ff <= 0;
-            if(i_ff == stage_end) 
-                i_ff <= stage_start;
-            else begin
-                if(mode_state == `INTT)
-                    i_ff <= i_ff - 1;
-                else
-                    i_ff <= i_ff + 1;
             end
-        end
-        else begin 
-            if(mode_state == `PWM0 || mode_state == `PWM1) 
-                s_ff <= s_ff + 1;
-            else
-                s_ff <= s_ff + `P; //每次增加`P个
-        end
+            ST_RUN: begin
+                done_ff <= 1'b0;
+                if (s == j_block_last) begin
+                    s <= 0;
+                    if (k == K_cur-1) begin
+                        k <= 0;
+                        if ( (is_ntt && (i == (`R4_STAGE_NUM-1))) || (is_intt && (i == 0)) ) begin
+                            done_ff <= 1'b1;
+                            state <= ST_IDLE;
+                        end else begin
+                            if (is_intt)
+                                i <= i - 1'b1;
+                            else
+                                i <= i + 1'b1;
+                        end
+                    end else begin
+                        k <= k + 1'b1;
+                    end
+                end else begin
+                    s <= s + 1'b1;
+                end
+            end
+            default: state <= ST_IDLE;
+        endcase
     end
-    else begin
-        i_ff <= stage_start;
-        s_ff <= 0; 
+end
+
+always @(*) begin
+    if(state==ST_RUN) begin
+        en_ff = 1'b1;
+        wen_ff = 1'b1;
+        ren_ff = 1'b1;
+    end else begin
+        en_ff = 1'b0;
+        wen_ff = 1'b0;
+        ren_ff = 1'b0;
     end
 end
 
