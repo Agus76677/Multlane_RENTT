@@ -148,16 +148,14 @@ generate
     end
 endgenerate
 
-(*DONT_TOUCH = "true"*)
 arbiter m3(
     .BI_bus                            (BI_bus                    ),//I
     .sel_BI_bus                        (sel_BI_bus                ) //0
 );
-                      
-(*DONT_TOUCH = "true"*)
+
 network_bank_in mux1(
     .BA_bus                            (BA_bus                     ),//I
-    .sel_BI_bus                        (sel_BI_bus                 ),//I
+    .BI_bus                            (BI_bus                     ),//I
     .new_address_bus                   (new_address_bus            ) //O
 );
 
@@ -230,12 +228,11 @@ generate
     end
 endgenerate 
 
-(*DONT_TOUCH = "true"*)          
 network_RBFU_out mux3(
     .clk                               (clk                            ),//I
     .rst                               (rst                            ),//I
     .bf_out_bus                        (bf_out_bus                     ),//I
-    .sel_BI_bus                        (sel_BI_bus                     ),//I
+    .BI_bus                            (BI_bus                         ),//I
     .d_in_bus                          (d_in_bus                       ) //O
 );
 
