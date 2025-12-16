@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-`include "../../sources_1/RTL/parameter.v"
+`include "../RTL/parameter.v"
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -25,27 +25,27 @@ module tb_polytop_RE();
 reg clk;
 reg rst;
 reg [1:0] opcode;
-reg mode;   
-reg offset; 
+reg mode;
+reg offset;
 reg start;    // Pulse signal
 wire finish;  // Pulse signal, 1 : finish
+
+reg [8*1024-1:0] tb_dir;
 
 always#2.5 clk = ~clk;
 // TB config + file-IO helpers (avoid OP0/OP1/OP2/OP3 copy-paste)
 // ============================================================================
-`define TB_DATA_DIR  "D:/desktopnew/Vivado_Projects/1.NTT/Multlane_RENTT_2018_opt1/Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/"
+localparam integer TB_BANK_NUM = 2*`P;
 
-`ifdef OP0
-  `define TB_BANK_NUM 4
-`elsif OP1
-  `define TB_BANK_NUM 8
-`elsif OP2
-  `define TB_BANK_NUM 16
-`elsif OP3
-  `define TB_BANK_NUM 32
-`else
-  `define TB_BANK_NUM 4
-`endif
+initial begin
+  tb_dir = "software/testbench_data";
+  if ($value$plusargs("TB_DATA_DIR=%s", tb_dir))
+    $display("[TB] TB_DATA_DIR overridden to %0s", tb_dir);
+  else
+    $display("[TB] TB_DATA_DIR using default %0s", tb_dir);
+
+  $display("[TB] effective TB_DATA_DIR=%0s", tb_dir);
+end
 
 localparam integer DUMP_F   = 0;
 localparam integer DUMP_G   = 1;
@@ -61,11 +61,13 @@ event   dump_event;
 
 genvar gi;
 generate
-  for (gi = 0; gi < `TB_BANK_NUM; gi = gi + 1) begin : GEN_TB_BANK
+  for (gi = 0; gi < TB_BANK_NUM; gi = gi + 1) begin : GEN_TB_BANK
     // Load input data into each bank
     initial begin : LOAD_INPUT
       reg [2000:0] fp_in;
-      $sformat(fp_in, "%s/bank_input_%0d.bin", `TB_DATA_DIR, gi);
+      #1; // ensure tb_dir initialized
+      $sformat(fp_in, "%0s/bank_input_%0d.bin", tb_dir, gi);
+      $display("[TB] loading bank %0d from %0s", gi, fp_in);
       $readmemb(fp_in, polytop_inst.gen_dff[gi].bank_inst.bank);
     end
 
@@ -75,11 +77,11 @@ generate
       integer fh;
       integer jj;
       case (dump_sel)
-        DUMP_F  : $sformat(fp_out, "%s/bankf_%0d.txt",   `TB_DATA_DIR, gi);
-        DUMP_G  : $sformat(fp_out, "%s/bankg_%0d.txt",   `TB_DATA_DIR, gi);
-        DUMP_HAT: $sformat(fp_out, "%s/bankhat_%0d.txt", `TB_DATA_DIR, gi);
-        DUMP_H  : $sformat(fp_out, "%s/bankh_%0d.txt",   `TB_DATA_DIR, gi);
-        default : $sformat(fp_out, "%s/bankx_%0d.txt",   `TB_DATA_DIR, gi);
+        DUMP_F  : $sformat(fp_out, "%0s/bankf_%0d.txt",   tb_dir, gi);
+        DUMP_G  : $sformat(fp_out, "%0s/bankg_%0d.txt",   tb_dir, gi);
+        DUMP_HAT: $sformat(fp_out, "%0s/bankhat_%0d.txt", tb_dir, gi);
+        DUMP_H  : $sformat(fp_out, "%0s/bankh_%0d.txt",   tb_dir, gi);
+        default : $sformat(fp_out, "%0s/bankx_%0d.txt",   tb_dir, gi);
       endcase
 
       fh = $fopen(fp_out, "w");
@@ -216,7 +218,10 @@ initial begin
     dump_sel      = DUMP_H;
     dump_row_base = 0;
     -> dump_event;
-    
+
+    #20;
+    $finish;
+
 
 end
 

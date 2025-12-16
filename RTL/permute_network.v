@@ -14,6 +14,7 @@ module permute_gather #(
     wire [W-1:0]       in_arr   [0:N-1];
     wire [SELW-1:0]    sel_out  [0:N-1];
     reg  [W-1:0]       out_arr  [0:N-1];
+    localparam [SELW:0] N_VAL = N;
 
     genvar gi;
     generate
@@ -27,11 +28,10 @@ module permute_gather #(
     integer k;
     always @(*) begin
         for (k = 0; k < N; k = k + 1) begin
-            if (sel_out[k] < N[SELW-1:0]) begin
+            if ({1'b0, sel_out[k]} < N_VAL)
                 out_arr[k] = in_arr[sel_out[k]];
-            end else begin
+            else
                 out_arr[k] = {W{1'b0}};
-            end
         end
     end
 endmodule
@@ -50,6 +50,7 @@ module permute_scatter #(
     wire [W-1:0]       in_arr  [0:N-1];
     wire [SELW-1:0]    sel_in  [0:N-1];
     reg  [W-1:0]       out_arr [0:N-1];
+    localparam [SELW:0] N_VAL = N;
 
     genvar si;
     generate
@@ -67,9 +68,8 @@ module permute_scatter #(
         end
 
         for (j = 0; j < N; j = j + 1) begin
-            if (sel_in[j] < N[SELW-1:0]) begin
+            if ({1'b0, sel_in[j]} < N_VAL)
                 out_arr[sel_in[j]] = in_arr[j];
-            end
         end
     end
 endmodule
