@@ -148,14 +148,16 @@ generate
     end
 endgenerate
 
+(*DONT_TOUCH = "true"*)
 arbiter m3(
     .BI_bus                            (BI_bus                    ),//I
     .sel_BI_bus                        (sel_BI_bus                ) //0
 );
-
+                      
+(*DONT_TOUCH = "true"*)
 network_bank_in mux1(
     .BA_bus                            (BA_bus                     ),//I
-    .BI_bus                            (BI_bus                     ),//I
+    .sel_BI_bus                        (sel_BI_bus                 ),//I
     .new_address_bus                   (new_address_bus            ) //O
 );
 
@@ -165,6 +167,7 @@ generate
     for(i_dff = 0; i_dff < 2*`P; i_dff = i_dff + 1) begin : gen_dff
         shift#(.SHIFT(`L+1),.data_width(8)) dff_n0(.clk(clk),.rst(rst),.din(new_address[i_dff]),.dout(new_address_ff[i_dff]));
         
+        (*DONT_TOUCH = "true"*)
         bank bank_inst(
             .clk                               (clk                       ),//I
             .waddr                             (new_address_ff[i_dff]     ),//I
@@ -184,6 +187,7 @@ generate
 endgenerate
 
 
+(*DONT_TOUCH = "true"*)
 network_RBFU_in dmux(
     .clk                               (clk                       ),//I
     .rst                               (rst                       ),//I
@@ -226,11 +230,12 @@ generate
     end
 endgenerate 
 
+(*DONT_TOUCH = "true"*)          
 network_RBFU_out mux3(
     .clk                               (clk                            ),//I
     .rst                               (rst                            ),//I
     .bf_out_bus                        (bf_out_bus                     ),//I
-    .BI_bus                            (BI_bus                         ),//I
+    .sel_BI_bus                        (sel_BI_bus                     ),//I
     .d_in_bus                          (d_in_bus                       ) //O
 );
 
