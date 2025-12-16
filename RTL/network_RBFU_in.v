@@ -25,13 +25,13 @@ generate
     end
 endgenerate
 
-permute_benes #(
+permute_scatter #(
     .N(N_LANES),
     .W(`DATA_WIDTH),
     .SELW(`MAP)
 ) scatter_to_rbfu (
     .in_bus(q_bus),
-    .dest_bus(sel_BI_temp_bus),
+    .sel_in_bus(sel_BI_temp_bus),
     .out_bus(rbfu_data_bus)
 );
 

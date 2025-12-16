@@ -18,13 +18,13 @@ generate
     end
 endgenerate
 
-permute_benes #(
+permute_scatter #(
     .N(N_LANES),
     .W(`MAP),
     .SELW(`MAP)
 ) scatter_inv (
     .in_bus(req_index_bus),
-    .dest_bus(BI_bus),
+    .sel_in_bus(BI_bus),
     .out_bus(sel_BI_bus)
 );
 
