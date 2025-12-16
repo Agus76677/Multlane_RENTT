@@ -22,10 +22,13 @@
 //-------------Radix4 feature macros------------
 `define RADIX4_EN
 `define R4_STAGE_NUM 4
-`define ADDR_ROM_WIDTH 7
-`define ROM_DEPTH 85
-`define OFFSET_TF_INTT 0
-`define OFFSET_TF_PWM1 0
+`define ADDR_ROM_WIDTH 9
+`define TF_SEG_LEN 85
+`define OFFSET_TF_NTT   0
+`define OFFSET_TF_INTT  (`OFFSET_TF_NTT + `TF_SEG_LEN)
+`define OFFSET_TF_PWM1  (`OFFSET_TF_INTT + `TF_SEG_LEN)
+`define OFFSET_TF_PWM0  (`OFFSET_TF_PWM1 + `TF_SEG_LEN)
+`define ROM_DEPTH       (`OFFSET_TF_PWM0 + `TF_SEG_LEN)
 
 //-------------参数定义------------
 // 根据OP宏自动配置P参数

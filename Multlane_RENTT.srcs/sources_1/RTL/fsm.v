@@ -11,7 +11,7 @@ input              [   1:0]         opcode   ,
 input                               start  ,//Pulse signal
 output reg         [   2:0]         i      ,//stage index 0-3
 output reg         [   6:0]         s      ,//j_block base (step by P_HALF)
-output reg         [   6:0]         k      ,//k counter for twiddle address
+output reg         [`ADDR_ROM_WIDTH-1:0] k      ,//k counter for twiddle address
 output                              wen    ,
 output                              ren    ,
 output                              en     ,
@@ -25,6 +25,9 @@ wire en_ff1;
 reg done_ff;
 reg start_ff;
 
+localparam integer WRITEBACK_DLY = (`L + 3);
+localparam integer REN_DLY       = 2;
+
 function [6:0] J_value;
     input [2:0] stage;
     begin
@@ -37,14 +40,14 @@ function [6:0] J_value;
     end
 endfunction
 
-function [6:0] K_value;
+function [`ADDR_ROM_WIDTH-1:0] K_value;
     input [2:0] stage;
     begin
         case(stage)
-            3'd0: K_value = 7'd1;
-            3'd1: K_value = 7'd4;
-            3'd2: K_value = 7'd16;
-            default: K_value = 7'd64;
+            3'd0: K_value = 9'd1;
+            3'd1: K_value = 9'd4;
+            3'd2: K_value = 9'd16;
+            default: K_value = 9'd64;
         endcase
     end
 endfunction
@@ -56,12 +59,12 @@ wire [6:0] J_cur = J_value(i);
 wire [6:0] K_cur = K_value(i);
 wire [6:0] j_block_last = ((J_cur + `P_HALF - 1)/`P_HALF) - 1'b1;
 
-assign en = en_ff1|wen;
+assign en = en_ff1 | wen;
 
-shift#(.SHIFT(`L+3),.data_width(1)) shif_wen(.clk(clk),.rst(rst),.din(wen_ff),.dout(wen));
-shift#(.SHIFT(`L+3),.data_width(1)) shif_finish(.clk(clk),.rst(rst),.din(done_ff),.dout(finish));
-shift#(.SHIFT(2),.data_width(1)) shif_en(.clk(clk),.rst(rst),.din(en_ff),.dout(en_ff1));
-shift#(.SHIFT(2),.data_width(1)) shif_ren(.clk(clk),.rst(rst),.din(ren_ff),.dout(ren));
+shift#(.SHIFT(WRITEBACK_DLY),.data_width(1)) shif_wen(.clk(clk),.rst(rst),.din(wen_ff),.dout(wen));
+shift#(.SHIFT(WRITEBACK_DLY),.data_width(1)) shif_finish(.clk(clk),.rst(rst),.din(done_ff),.dout(finish));
+shift#(.SHIFT(REN_DLY),.data_width(1)) shif_en(.clk(clk),.rst(rst),.din(en_ff),.dout(en_ff1));
+shift#(.SHIFT(REN_DLY),.data_width(1)) shif_ren(.clk(clk),.rst(rst),.din(ren_ff),.dout(ren));
 
 always @(posedge clk) begin
     if (rst)

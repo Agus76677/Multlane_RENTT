@@ -9,11 +9,11 @@ input clk,
 input rst,
 input [2:0] i,
 input [6:0] s,
-input [6:0] k,
+input [`ADDR_ROM_WIDTH-1:0] k,
 `ifdef OP0
     input b,
 `else
-    input [`P_SHIFT-2:0] b,
+    input [`P_SHIFT-1:0] b,
 `endif
 input [1:0] opcode,
 output [7:0] ie0,
