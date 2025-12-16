@@ -1,89 +1,364 @@
-stage 0:
-  k=00 w2=   1 w1=   1 w3=   1 omega1=   1
-stage 1:
-  k=01 w2=   1 w1=   1 w3=   1 omega1=   1
-  k=02 w2=3328 w1=1600 w3=1729 omega1=   1
-  k=03 w2=   1 w1=3328 w3=3328 omega1=   1
-  k=04 w2=3328 w1=1729 w3=1600 omega1=   1
-stage 2:
-  k=05 w2=   1 w1=   1 w3=   1 omega1=   1
-  k=06 w2=3289 w1=1897 w3= 687 omega1=   1
-  k=07 w2=1600 w1=3289 w3=2580 omega1=   1
-  k=08 w2=2580 w1= 687 w3=1432 omega1=   1
-  k=09 w2=3328 w1=1600 w3=1729 omega1=   1
-  k=10 w2=  40 w1=2481 w3=2699 omega1=   1
-  k=11 w2=1729 w1=2580 w3=3289 omega1=   1
-  k=12 w2= 749 w1= 630 w3=2481 omega1=   1
-  k=13 w2=   1 w1=3328 w3=3328 omega1=   1
-  k=14 w2=3289 w1=1432 w3=2642 omega1=   1
-  k=15 w2=1600 w1=  40 w3= 749 omega1=   1
-  k=16 w2=2580 w1=2642 w3=1897 omega1=   1
-  k=17 w2=3328 w1=1729 w3=1600 omega1=   1
-  k=18 w2=  40 w1= 848 w3= 630 omega1=   1
-  k=19 w2=1729 w1= 749 w3=  40 omega1=   1
-  k=20 w2= 749 w1=2699 w3= 848 omega1=   1
-stage 3:
-  k=21 w2=   1 w1=   1 w3=   1 omega1=   1
-  k=22 w2=2786 w1=1426 w3=1339 omega1=   1
-  k=23 w2=1897 w1=2786 w3=1919 omega1=   1
-  k=24 w2=1919 w1=1339 w3=2882 omega1=   1
-  k=25 w2=3289 w1=1897 w3= 687 omega1=   1
-  k=26 w2=1746 w1=1974 w3=1089 omega1=   1
-  k=27 w2= 687 w1=1919 w3=  69 omega1=   1
-  k=28 w2=3136 w1=  56 w3=2508 omega1=   1
-  k=29 w2=1600 w1=3289 w3=2580 omega1=   1
-  k=30 w2=  69 w1=2882 w3=2447 omega1=   1
-  k=31 w2=2481 w1=1746 w3= 797 omega1=   1
-  k=32 w2=1062 w1=3033 w3=1903 omega1=   1
-  k=33 w2=2580 w1= 687 w3=1432 omega1=   1
-  k=34 w2= 569 w1= 936 w3=3273 omega1=   1
-  k=35 w2= 630 w1=3136 w3=1583 omega1=   1
-  k=36 w2= 797 w1=1089 w3=2393 omega1=   1
-  k=37 w2=3328 w1=1600 w3=1729 omega1=   1
-  k=38 w2= 543 w1=1235 w3=1476 omega1=   1
-  k=39 w2=1432 w1=  69 w3=2267 omega1=   1
-  k=40 w2=1410 w1=1853 w3=2794 omega1=   1
-  k=41 w2=  40 w1=2481 w3=2699 omega1=   1
-  k=42 w2=1583 w1=2508 w3=1996 omega1=   1
-  k=43 w2=2642 w1=1062 w3=2786 omega1=   1
-  k=44 w2= 193 w1=3046 w3=1974 omega1=   1
-  k=45 w2=1729 w1=2580 w3=3289 omega1=   1
-  k=46 w2=3260 w1= 535 w3=3033 omega1=   1
-  k=47 w2= 848 w1= 569 w3=3136 omega1=   1
-  k=48 w2=2267 w1=2447 w3=1235 omega1=   1
-  k=49 w2= 749 w1= 630 w3=2481 omega1=   1
-  k=50 w2=2760 w1=2879 w3=3046 omega1=   1
-  k=51 w2=2699 w1= 797 w3= 569 omega1=   1
-  k=52 w2=2532 w1=1333 w3=2879 omega1=   1
-  k=53 w2=   1 w1=3328 w3=3328 omega1=   1
-  k=54 w2=2786 w1=1903 w3=1990 omega1=   1
-  k=55 w2=1897 w1= 543 w3=1410 omega1=   1
-  k=56 w2=1919 w1=1990 w3= 447 omega1=   1
-  k=57 w2=3289 w1=1432 w3=2642 omega1=   1
-  k=58 w2=1746 w1=1355 w3=2240 omega1=   1
-  k=59 w2= 687 w1=1410 w3=3260 omega1=   1
-  k=60 w2=3136 w1=3273 w3= 821 omega1=   1
-  k=61 w2=1600 w1=  40 w3= 749 omega1=   1
-  k=62 w2=  69 w1= 447 w3= 882 omega1=   1
-  k=63 w2=2481 w1=1583 w3=2532 omega1=   1
-  k=64 w2=1062 w1= 296 w3=1426 omega1=   1
-  k=65 w2=2580 w1=2642 w3=1897 omega1=   1
-  k=66 w2= 569 w1=2393 w3=  56 omega1=   1
-  k=67 w2= 630 w1= 193 w3=1746 omega1=   1
-  k=68 w2= 797 w1=2240 w3= 936 omega1=   1
-  k=69 w2=3328 w1=1729 w3=1600 omega1=   1
-  k=70 w2= 543 w1=2094 w3=1853 omega1=   1
-  k=71 w2=1432 w1=3260 w3=1062 omega1=   1
-  k=72 w2=1410 w1=1476 w3= 535 omega1=   1
-  k=73 w2=  40 w1= 848 w3= 630 omega1=   1
-  k=74 w2=1583 w1= 821 w3=1333 omega1=   1
-  k=75 w2=2642 w1=2267 w3= 543 omega1=   1
-  k=76 w2= 193 w1= 283 w3=1355 omega1=   1
-  k=77 w2=1729 w1= 749 w3=  40 omega1=   1
-  k=78 w2=3260 w1=2794 w3= 296 omega1=   1
-  k=79 w2= 848 w1=2760 w3= 193 omega1=   1
-  k=80 w2=2267 w1= 882 w3=2094 omega1=   1
-  k=81 w2= 749 w1=2699 w3= 848 omega1=   1
-  k=82 w2=2760 w1= 450 w3= 283 omega1=   1
-  k=83 w2=2699 w1=2532 w3=2760 omega1=   1
-  k=84 w2=2532 w1=1996 w3= 450 omega1=   1
+Segment NTT (phi=939, omega1=1729)
+  stage 0:
+    addr=00 w2=3328 w1=1729 w3=1600 omega1=1729
+  stage 1:
+    addr=01 w2= 749 w1=2699 w3= 848 omega1=1729
+    addr=02 w2=  40 w1= 848 w3= 630 omega1=1729
+    addr=03 w2=2580 w1=2642 w3=1897 omega1=1729
+    addr=04 w2=3289 w1=1432 w3=2642 omega1=1729
+  stage 2:
+    addr=05 w2= 797 w1=2240 w3= 936 omega1=1729
+    addr=06 w2= 569 w1= 936 w3=3273 omega1=1729
+    addr=07 w2=1062 w1= 296 w3=1426 omega1=1729
+    addr=08 w2=  69 w1=2882 w3=2447 omega1=1729
+    addr=09 w2=3136 w1=3273 w3= 821 omega1=1729
+    addr=10 w2=1746 w1=1974 w3=1089 omega1=1729
+    addr=11 w2=1919 w1=1990 w3= 447 omega1=1729
+    addr=12 w2=2786 w1=1426 w3=1339 omega1=1729
+    addr=13 w2=2532 w1=1333 w3=2879 omega1=1729
+    addr=14 w2=2760 w1= 450 w3= 283 omega1=1729
+    addr=15 w2=2267 w1=2447 w3=1235 omega1=1729
+    addr=16 w2=3260 w1=2794 w3= 296 omega1=1729
+    addr=17 w2= 193 w1=3046 w3=1974 omega1=1729
+    addr=18 w2=1583 w1= 821 w3=1333 omega1=1729
+    addr=19 w2=1410 w1=1853 w3=2794 omega1=1729
+    addr=20 w2= 543 w1=2094 w3=1853 omega1=1729
+  stage 3:
+    addr=21 w2=2865 w1= 939 w3= 403 omega1=1729
+    addr=22 w2=2617 w1= 403 w3=2687 omega1=1729
+    addr=23 w2=3040 w1=2761 w3=1031 omega1=1729
+    addr=24 w2=1795 w1= 561 w3=1637 omega1=1729
+    addr=25 w2=2697 w1=2687 w3=2935 omega1=1729
+    addr=26 w2=2474 w1=1607 w3= 892 omega1=1729
+    addr=27 w2=2304 w1=  48 w3= 735 omega1=1729
+    addr=28 w2=1010 w1=1031 w3=2662 omega1=1729
+    addr=29 w2=2009 w1= 992 w3=2186 omega1=1729
+    addr=30 w2=2681 w1=2443 w3=1540 omega1=1729
+    addr=31 w2=3253 w1=1637 w3=2090 omega1=1729
+    addr=32 w2=2868 w1=2773 w3=3312 omega1=1729
+    addr=33 w2=2679 w1=1651 w3=2117 omega1=1729
+    addr=34 w2=2102 w1=2935 w3= 733 omega1=1729
+    addr=35 w2=1274 w1=3050 w3= 757 omega1=1729
+    addr=36 w2= 807 w1=2954 w3= 314 omega1=1729
+    addr=37 w2=  33 w1= 892 w3=2804 omega1=1729
+    addr=38 w2= 682 w1=2237 w3= 952 omega1=1729
+    addr=39 w2=2998 w1= 680 w3=1292 omega1=1729
+    addr=40 w2= 927 w1= 735 w3=2229 omega1=1729
+    addr=41 w2=2513 w1=1847 w3= 885 omega1=1729
+    addr=42 w2=3110 w1=1874 w3=2390 omega1=1729
+    addr=43 w2=2132 w1=2662 w3=2768 omega1=1729
+    addr=44 w2=1894 w1=3220 w3=3281 omega1=1729
+    addr=45 w2=1414 w1= 641 w3= 886 omega1=1729
+    addr=46 w2=1481 w1=2186 w3=1678 omega1=1729
+    addr=47 w2=1756 w1=1041 w3= 375 omega1=1729
+    addr=48 w2=1891 w1=3010 w3=2649 omega1=1729
+    addr=49 w2=1352 w1=1540 w3=1455 omega1=1729
+    addr=50 w2=2419 w1=1175 w3=2688 omega1=1729
+    addr=51 w2=2277 w1= 756 w3= 319 omega1=1729
+    addr=52 w2= 452 w1=2090 w3=2573 omega1=1729
+    addr=53 w2= 464 w1=2308 w3=2303 omega1=1729
+    addr=54 w2= 712 w1=1026 w3=1461 omega1=1729
+    addr=55 w2= 289 w1=3312 w3=1745 omega1=1729
+    addr=56 w2=1534 w1=1230 w3=2606 omega1=1729
+    addr=57 w2= 632 w1=1868 w3=2110 omega1=1729
+    addr=58 w2= 855 w1=2117 w3=2388 omega1=1729
+    addr=59 w2=1025 w1=3096 w3= 863 omega1=1729
+    addr=60 w2=2319 w1=1584 w3=1409 omega1=1729
+    addr=61 w2=1320 w1= 733 w3=2150 omega1=1729
+    addr=62 w2= 648 w1=2775 w3= 540 omega1=1729
+    addr=63 w2=  76 w1= 723 w3=1684 omega1=1729
+    addr=64 w2= 461 w1= 757 w3=2761 omega1=1729
+    addr=65 w2= 650 w1=1626 w3=1607 omega1=1729
+    addr=66 w2=1227 w1=1219 w3= 992 omega1=1729
+    addr=67 w2=2055 w1= 314 w3=2773 omega1=1729
+    addr=68 w2=2522 w1= 780 w3=3050 omega1=1729
+    addr=69 w2=3296 w1= 941 w3=2237 omega1=1729
+    addr=70 w2=2647 w1=2804 w3=1847 omega1=1729
+    addr=71 w2= 331 w1= 583 w3=3220 omega1=1729
+    addr=72 w2=2402 w1=2466 w3=1041 omega1=1729
+    addr=73 w2= 816 w1= 952 w3=1175 omega1=1729
+    addr=74 w2= 219 w1=1029 w3=2308 omega1=1729
+    addr=75 w2=1197 w1=1920 w3=1230 omega1=1729
+    addr=76 w2=1435 w1=1292 w3=3096 omega1=1729
+    addr=77 w2=1915 w1=3061 w3=2775 omega1=1729
+    addr=78 w2=1848 w1=1179 w3=1626 omega1=1729
+    addr=79 w2=1573 w1=2229 w3= 780 omega1=1729
+    addr=80 w2=1438 w1=1063 w3= 583 omega1=1729
+    addr=81 w2=1977 w1=2789 w3=1029 omega1=1729
+    addr=82 w2= 910 w1= 885 w3=3061 omega1=1729
+    addr=83 w2=1052 w1=2156 w3=1063 omega1=1729
+    addr=84 w2=2877 w1=1645 w3=2156 omega1=1729
+
+Segment INTT (phi=1684, omega1=1600)
+  stage 0:
+    addr=00 w2=3328 w1=1600 w3=1729 omega1=1729
+  stage 1:
+    addr=01 w2=3289 w1=1897 w3= 687 omega1=1729
+    addr=02 w2=2580 w1= 687 w3=1432 omega1=1729
+    addr=03 w2=  40 w1=2481 w3=2699 omega1=1729
+    addr=04 w2= 749 w1= 630 w3=2481 omega1=1729
+  stage 2:
+    addr=05 w2= 543 w1=1235 w3=1476 omega1=1729
+    addr=06 w2=1410 w1=1476 w3= 535 omega1=1729
+    addr=07 w2=1583 w1=2508 w3=1996 omega1=1729
+    addr=08 w2= 193 w1= 283 w3=1355 omega1=1729
+    addr=09 w2=3260 w1= 535 w3=3033 omega1=1729
+    addr=10 w2=2267 w1= 882 w3=2094 omega1=1729
+    addr=11 w2=2760 w1=2879 w3=3046 omega1=1729
+    addr=12 w2=2532 w1=1996 w3= 450 omega1=1729
+    addr=13 w2=2786 w1=1903 w3=1990 omega1=1729
+    addr=14 w2=1919 w1=1339 w3=2882 omega1=1729
+    addr=15 w2=1746 w1=1355 w3=2240 omega1=1729
+    addr=16 w2=3136 w1=  56 w3=2508 omega1=1729
+    addr=17 w2=  69 w1= 447 w3= 882 omega1=1729
+    addr=18 w2=1062 w1=3033 w3=1903 omega1=1729
+    addr=19 w2= 569 w1=2393 w3=  56 omega1=1729
+    addr=20 w2= 797 w1=1089 w3=2393 omega1=1729
+  stage 3:
+    addr=21 w2=2877 w1=1684 w3=1173 omega1=1729
+    addr=22 w2=1052 w1=1173 w3=2266 omega1=1729
+    addr=23 w2= 910 w1=2444 w3= 268 omega1=1729
+    addr=24 w2=1977 w1= 540 w3=2300 omega1=1729
+    addr=25 w2=1438 w1=2266 w3=2746 omega1=1729
+    addr=26 w2=1573 w1=1100 w3=2549 omega1=1729
+    addr=27 w2=1848 w1=2150 w3=1703 omega1=1729
+    addr=28 w2=1915 w1= 268 w3= 554 omega1=1729
+    addr=29 w2=1435 w1=2037 w3= 233 omega1=1729
+    addr=30 w2=1197 w1=1409 w3=2099 omega1=1729
+    addr=31 w2= 219 w1=2300 w3=1021 omega1=1729
+    addr=32 w2= 816 w1=2377 w3=2154 omega1=1729
+    addr=33 w2=2402 w1= 863 w3=2288 omega1=1729
+    addr=34 w2= 331 w1=2746 w3= 109 omega1=1729
+    addr=35 w2=2647 w1= 525 w3=1482 omega1=1729
+    addr=36 w2=3296 w1=2388 w3=1092 omega1=1729
+    addr=37 w2=2522 w1=2549 w3= 279 omega1=1729
+    addr=38 w2=2055 w1=3015 w3= 556 omega1=1729
+    addr=39 w2=1227 w1=2110 w3=2337 omega1=1729
+    addr=40 w2= 650 w1=1703 w3=1722 omega1=1729
+    addr=41 w2= 461 w1=2572 w3= 568 omega1=1729
+    addr=42 w2=  76 w1=2606 w3=1645 omega1=1729
+    addr=43 w2= 648 w1= 554 w3=2789 omega1=1729
+    addr=44 w2=1320 w1=2596 w3=1179 omega1=1729
+    addr=45 w2=2319 w1=1745 w3=1920 omega1=1729
+    addr=46 w2=1025 w1= 233 w3=2466 omega1=1729
+    addr=47 w2= 855 w1=1212 w3= 941 omega1=1729
+    addr=48 w2= 632 w1=1461 w3=1219 omega1=1729
+    addr=49 w2=1534 w1=2099 w3= 723 omega1=1729
+    addr=50 w2= 289 w1=  17 w3=1584 omega1=1729
+    addr=51 w2= 712 w1=2303 w3=1868 omega1=1729
+    addr=52 w2= 464 w1=1021 w3=1026 omega1=1729
+    addr=53 w2= 452 w1=1239 w3= 756 omega1=1729
+    addr=54 w2=2277 w1=2573 w3=3010 omega1=1729
+    addr=55 w2=2419 w1=2154 w3= 641 omega1=1729
+    addr=56 w2=1352 w1=1789 w3=1874 omega1=1729
+    addr=57 w2=1891 w1= 319 w3= 680 omega1=1729
+    addr=58 w2=1756 w1=2288 w3=2954 omega1=1729
+    addr=59 w2=1481 w1=1143 w3=1651 omega1=1729
+    addr=60 w2=1414 w1=2688 w3=2443 omega1=1729
+    addr=61 w2=1894 w1= 109 w3=  48 omega1=1729
+    addr=62 w2=2132 w1= 667 w3= 561 omega1=1729
+    addr=63 w2=3110 w1=1455 w3= 939 omega1=1729
+    addr=64 w2=2513 w1=1482 w3=2444 omega1=1729
+    addr=65 w2= 927 w1=2594 w3=1100 omega1=1729
+    addr=66 w2=2998 w1=2649 w3=2037 omega1=1729
+    addr=67 w2= 682 w1=1092 w3=2377 omega1=1729
+    addr=68 w2=  33 w1=2437 w3= 525 omega1=1729
+    addr=69 w2= 807 w1= 375 w3=3015 omega1=1729
+    addr=70 w2=1274 w1= 279 w3=2572 omega1=1729
+    addr=71 w2=2102 w1= 394 w3=2596 omega1=1729
+    addr=72 w2=2679 w1=1678 w3=1212 omega1=1729
+    addr=73 w2=2868 w1= 556 w3=  17 omega1=1729
+    addr=74 w2=3253 w1=1692 w3=1239 omega1=1729
+    addr=75 w2=2681 w1= 886 w3=1789 omega1=1729
+    addr=76 w2=2009 w1=2337 w3=1143 omega1=1729
+    addr=77 w2=1010 w1=2298 w3= 667 omega1=1729
+    addr=78 w2=2304 w1=3281 w3=2594 omega1=1729
+    addr=79 w2=2474 w1=1722 w3=2437 omega1=1729
+    addr=80 w2=2697 w1= 642 w3= 394 omega1=1729
+    addr=81 w2=1795 w1=2768 w3=1692 omega1=1729
+    addr=82 w2=3040 w1= 568 w3=2298 omega1=1729
+    addr=83 w2=2617 w1=2926 w3= 642 omega1=1729
+    addr=84 w2=2865 w1=2390 w3=2926 omega1=1729
+
+Segment PWM1 (phi=939, omega1=1729)
+  stage 0:
+    addr=00 w2=3328 w1=1729 w3=1600 omega1=1729
+  stage 1:
+    addr=01 w2= 749 w1=2699 w3= 848 omega1=1729
+    addr=02 w2=  40 w1= 848 w3= 630 omega1=1729
+    addr=03 w2=2580 w1=2642 w3=1897 omega1=1729
+    addr=04 w2=3289 w1=1432 w3=2642 omega1=1729
+  stage 2:
+    addr=05 w2= 797 w1=2240 w3= 936 omega1=1729
+    addr=06 w2= 569 w1= 936 w3=3273 omega1=1729
+    addr=07 w2=1062 w1= 296 w3=1426 omega1=1729
+    addr=08 w2=  69 w1=2882 w3=2447 omega1=1729
+    addr=09 w2=3136 w1=3273 w3= 821 omega1=1729
+    addr=10 w2=1746 w1=1974 w3=1089 omega1=1729
+    addr=11 w2=1919 w1=1990 w3= 447 omega1=1729
+    addr=12 w2=2786 w1=1426 w3=1339 omega1=1729
+    addr=13 w2=2532 w1=1333 w3=2879 omega1=1729
+    addr=14 w2=2760 w1= 450 w3= 283 omega1=1729
+    addr=15 w2=2267 w1=2447 w3=1235 omega1=1729
+    addr=16 w2=3260 w1=2794 w3= 296 omega1=1729
+    addr=17 w2= 193 w1=3046 w3=1974 omega1=1729
+    addr=18 w2=1583 w1= 821 w3=1333 omega1=1729
+    addr=19 w2=1410 w1=1853 w3=2794 omega1=1729
+    addr=20 w2= 543 w1=2094 w3=1853 omega1=1729
+  stage 3:
+    addr=21 w2=2865 w1= 939 w3= 403 omega1=1729
+    addr=22 w2=2617 w1= 403 w3=2687 omega1=1729
+    addr=23 w2=3040 w1=2761 w3=1031 omega1=1729
+    addr=24 w2=1795 w1= 561 w3=1637 omega1=1729
+    addr=25 w2=2697 w1=2687 w3=2935 omega1=1729
+    addr=26 w2=2474 w1=1607 w3= 892 omega1=1729
+    addr=27 w2=2304 w1=  48 w3= 735 omega1=1729
+    addr=28 w2=1010 w1=1031 w3=2662 omega1=1729
+    addr=29 w2=2009 w1= 992 w3=2186 omega1=1729
+    addr=30 w2=2681 w1=2443 w3=1540 omega1=1729
+    addr=31 w2=3253 w1=1637 w3=2090 omega1=1729
+    addr=32 w2=2868 w1=2773 w3=3312 omega1=1729
+    addr=33 w2=2679 w1=1651 w3=2117 omega1=1729
+    addr=34 w2=2102 w1=2935 w3= 733 omega1=1729
+    addr=35 w2=1274 w1=3050 w3= 757 omega1=1729
+    addr=36 w2= 807 w1=2954 w3= 314 omega1=1729
+    addr=37 w2=  33 w1= 892 w3=2804 omega1=1729
+    addr=38 w2= 682 w1=2237 w3= 952 omega1=1729
+    addr=39 w2=2998 w1= 680 w3=1292 omega1=1729
+    addr=40 w2= 927 w1= 735 w3=2229 omega1=1729
+    addr=41 w2=2513 w1=1847 w3= 885 omega1=1729
+    addr=42 w2=3110 w1=1874 w3=2390 omega1=1729
+    addr=43 w2=2132 w1=2662 w3=2768 omega1=1729
+    addr=44 w2=1894 w1=3220 w3=3281 omega1=1729
+    addr=45 w2=1414 w1= 641 w3= 886 omega1=1729
+    addr=46 w2=1481 w1=2186 w3=1678 omega1=1729
+    addr=47 w2=1756 w1=1041 w3= 375 omega1=1729
+    addr=48 w2=1891 w1=3010 w3=2649 omega1=1729
+    addr=49 w2=1352 w1=1540 w3=1455 omega1=1729
+    addr=50 w2=2419 w1=1175 w3=2688 omega1=1729
+    addr=51 w2=2277 w1= 756 w3= 319 omega1=1729
+    addr=52 w2= 452 w1=2090 w3=2573 omega1=1729
+    addr=53 w2= 464 w1=2308 w3=2303 omega1=1729
+    addr=54 w2= 712 w1=1026 w3=1461 omega1=1729
+    addr=55 w2= 289 w1=3312 w3=1745 omega1=1729
+    addr=56 w2=1534 w1=1230 w3=2606 omega1=1729
+    addr=57 w2= 632 w1=1868 w3=2110 omega1=1729
+    addr=58 w2= 855 w1=2117 w3=2388 omega1=1729
+    addr=59 w2=1025 w1=3096 w3= 863 omega1=1729
+    addr=60 w2=2319 w1=1584 w3=1409 omega1=1729
+    addr=61 w2=1320 w1= 733 w3=2150 omega1=1729
+    addr=62 w2= 648 w1=2775 w3= 540 omega1=1729
+    addr=63 w2=  76 w1= 723 w3=1684 omega1=1729
+    addr=64 w2= 461 w1= 757 w3=2761 omega1=1729
+    addr=65 w2= 650 w1=1626 w3=1607 omega1=1729
+    addr=66 w2=1227 w1=1219 w3= 992 omega1=1729
+    addr=67 w2=2055 w1= 314 w3=2773 omega1=1729
+    addr=68 w2=2522 w1= 780 w3=3050 omega1=1729
+    addr=69 w2=3296 w1= 941 w3=2237 omega1=1729
+    addr=70 w2=2647 w1=2804 w3=1847 omega1=1729
+    addr=71 w2= 331 w1= 583 w3=3220 omega1=1729
+    addr=72 w2=2402 w1=2466 w3=1041 omega1=1729
+    addr=73 w2= 816 w1= 952 w3=1175 omega1=1729
+    addr=74 w2= 219 w1=1029 w3=2308 omega1=1729
+    addr=75 w2=1197 w1=1920 w3=1230 omega1=1729
+    addr=76 w2=1435 w1=1292 w3=3096 omega1=1729
+    addr=77 w2=1915 w1=3061 w3=2775 omega1=1729
+    addr=78 w2=1848 w1=1179 w3=1626 omega1=1729
+    addr=79 w2=1573 w1=2229 w3= 780 omega1=1729
+    addr=80 w2=1438 w1=1063 w3= 583 omega1=1729
+    addr=81 w2=1977 w1=2789 w3=1029 omega1=1729
+    addr=82 w2= 910 w1= 885 w3=3061 omega1=1729
+    addr=83 w2=1052 w1=2156 w3=1063 omega1=1729
+    addr=84 w2=2877 w1=1645 w3=2156 omega1=1729
+
+Segment PWM0 (phi=939, omega1=1729)
+  stage 0:
+    addr=00 w2=3328 w1=1729 w3=1600 omega1=1729
+  stage 1:
+    addr=01 w2= 749 w1=2699 w3= 848 omega1=1729
+    addr=02 w2=  40 w1= 848 w3= 630 omega1=1729
+    addr=03 w2=2580 w1=2642 w3=1897 omega1=1729
+    addr=04 w2=3289 w1=1432 w3=2642 omega1=1729
+  stage 2:
+    addr=05 w2= 797 w1=2240 w3= 936 omega1=1729
+    addr=06 w2= 569 w1= 936 w3=3273 omega1=1729
+    addr=07 w2=1062 w1= 296 w3=1426 omega1=1729
+    addr=08 w2=  69 w1=2882 w3=2447 omega1=1729
+    addr=09 w2=3136 w1=3273 w3= 821 omega1=1729
+    addr=10 w2=1746 w1=1974 w3=1089 omega1=1729
+    addr=11 w2=1919 w1=1990 w3= 447 omega1=1729
+    addr=12 w2=2786 w1=1426 w3=1339 omega1=1729
+    addr=13 w2=2532 w1=1333 w3=2879 omega1=1729
+    addr=14 w2=2760 w1= 450 w3= 283 omega1=1729
+    addr=15 w2=2267 w1=2447 w3=1235 omega1=1729
+    addr=16 w2=3260 w1=2794 w3= 296 omega1=1729
+    addr=17 w2= 193 w1=3046 w3=1974 omega1=1729
+    addr=18 w2=1583 w1= 821 w3=1333 omega1=1729
+    addr=19 w2=1410 w1=1853 w3=2794 omega1=1729
+    addr=20 w2= 543 w1=2094 w3=1853 omega1=1729
+  stage 3:
+    addr=21 w2=2865 w1= 939 w3= 403 omega1=1729
+    addr=22 w2=2617 w1= 403 w3=2687 omega1=1729
+    addr=23 w2=3040 w1=2761 w3=1031 omega1=1729
+    addr=24 w2=1795 w1= 561 w3=1637 omega1=1729
+    addr=25 w2=2697 w1=2687 w3=2935 omega1=1729
+    addr=26 w2=2474 w1=1607 w3= 892 omega1=1729
+    addr=27 w2=2304 w1=  48 w3= 735 omega1=1729
+    addr=28 w2=1010 w1=1031 w3=2662 omega1=1729
+    addr=29 w2=2009 w1= 992 w3=2186 omega1=1729
+    addr=30 w2=2681 w1=2443 w3=1540 omega1=1729
+    addr=31 w2=3253 w1=1637 w3=2090 omega1=1729
+    addr=32 w2=2868 w1=2773 w3=3312 omega1=1729
+    addr=33 w2=2679 w1=1651 w3=2117 omega1=1729
+    addr=34 w2=2102 w1=2935 w3= 733 omega1=1729
+    addr=35 w2=1274 w1=3050 w3= 757 omega1=1729
+    addr=36 w2= 807 w1=2954 w3= 314 omega1=1729
+    addr=37 w2=  33 w1= 892 w3=2804 omega1=1729
+    addr=38 w2= 682 w1=2237 w3= 952 omega1=1729
+    addr=39 w2=2998 w1= 680 w3=1292 omega1=1729
+    addr=40 w2= 927 w1= 735 w3=2229 omega1=1729
+    addr=41 w2=2513 w1=1847 w3= 885 omega1=1729
+    addr=42 w2=3110 w1=1874 w3=2390 omega1=1729
+    addr=43 w2=2132 w1=2662 w3=2768 omega1=1729
+    addr=44 w2=1894 w1=3220 w3=3281 omega1=1729
+    addr=45 w2=1414 w1= 641 w3= 886 omega1=1729
+    addr=46 w2=1481 w1=2186 w3=1678 omega1=1729
+    addr=47 w2=1756 w1=1041 w3= 375 omega1=1729
+    addr=48 w2=1891 w1=3010 w3=2649 omega1=1729
+    addr=49 w2=1352 w1=1540 w3=1455 omega1=1729
+    addr=50 w2=2419 w1=1175 w3=2688 omega1=1729
+    addr=51 w2=2277 w1= 756 w3= 319 omega1=1729
+    addr=52 w2= 452 w1=2090 w3=2573 omega1=1729
+    addr=53 w2= 464 w1=2308 w3=2303 omega1=1729
+    addr=54 w2= 712 w1=1026 w3=1461 omega1=1729
+    addr=55 w2= 289 w1=3312 w3=1745 omega1=1729
+    addr=56 w2=1534 w1=1230 w3=2606 omega1=1729
+    addr=57 w2= 632 w1=1868 w3=2110 omega1=1729
+    addr=58 w2= 855 w1=2117 w3=2388 omega1=1729
+    addr=59 w2=1025 w1=3096 w3= 863 omega1=1729
+    addr=60 w2=2319 w1=1584 w3=1409 omega1=1729
+    addr=61 w2=1320 w1= 733 w3=2150 omega1=1729
+    addr=62 w2= 648 w1=2775 w3= 540 omega1=1729
+    addr=63 w2=  76 w1= 723 w3=1684 omega1=1729
+    addr=64 w2= 461 w1= 757 w3=2761 omega1=1729
+    addr=65 w2= 650 w1=1626 w3=1607 omega1=1729
+    addr=66 w2=1227 w1=1219 w3= 992 omega1=1729
+    addr=67 w2=2055 w1= 314 w3=2773 omega1=1729
+    addr=68 w2=2522 w1= 780 w3=3050 omega1=1729
+    addr=69 w2=3296 w1= 941 w3=2237 omega1=1729
+    addr=70 w2=2647 w1=2804 w3=1847 omega1=1729
+    addr=71 w2= 331 w1= 583 w3=3220 omega1=1729
+    addr=72 w2=2402 w1=2466 w3=1041 omega1=1729
+    addr=73 w2= 816 w1= 952 w3=1175 omega1=1729
+    addr=74 w2= 219 w1=1029 w3=2308 omega1=1729
+    addr=75 w2=1197 w1=1920 w3=1230 omega1=1729
+    addr=76 w2=1435 w1=1292 w3=3096 omega1=1729
+    addr=77 w2=1915 w1=3061 w3=2775 omega1=1729
+    addr=78 w2=1848 w1=1179 w3=1626 omega1=1729
+    addr=79 w2=1573 w1=2229 w3= 780 omega1=1729
+    addr=80 w2=1438 w1=1063 w3= 583 omega1=1729
+    addr=81 w2=1977 w1=2789 w3=1029 omega1=1729
+    addr=82 w2= 910 w1= 885 w3=3061 omega1=1729
+    addr=83 w2=1052 w1=2156 w3=1063 omega1=1729
+    addr=84 w2=2877 w1=1645 w3=2156 omega1=1729
+

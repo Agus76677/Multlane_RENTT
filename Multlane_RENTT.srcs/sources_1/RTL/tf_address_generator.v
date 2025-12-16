@@ -6,30 +6,31 @@ module tf_address_generator(
     input                               rst        ,
     input    [1                :0]      opcode     ,
     input    [2                :0]      i          ,
-    input    [6                :0]      k          ,
+    input    [`ADDR_ROM_WIDTH -1:0]     k          ,
     output   [`ADDR_ROM_WIDTH -1:0]     tf_address
 );
 
 reg [`ADDR_ROM_WIDTH -1:0] tf_address_tmp;
 
-function [6:0] stage_base;
+function [8:0] stage_base;
     input [2:0] stage;
     begin
         case(stage)
-            3'd0: stage_base = 7'd0;
-            3'd1: stage_base = 7'd1;
-            3'd2: stage_base = 7'd5;
-            default: stage_base = 7'd21;
+            3'd0: stage_base = 9'd0;
+            3'd1: stage_base = 9'd1;
+            3'd2: stage_base = 9'd5;
+            default: stage_base = 9'd21;
         endcase
     end
 endfunction
 
 always@(*) begin
   case(opcode)
-    `NTT :begin tf_address_tmp = stage_base(i) + k; end
+    `NTT :begin tf_address_tmp = `OFFSET_TF_NTT  + stage_base(i) + k; end
     `INTT:begin tf_address_tmp = `OFFSET_TF_INTT + stage_base(i) + k; end
+    `PWM0:begin tf_address_tmp = `OFFSET_TF_PWM0 + k; end
     `PWM1:begin tf_address_tmp = `OFFSET_TF_PWM1 + k; end
-    default: tf_address_tmp = 0;
+    default: tf_address_tmp = `OFFSET_TF_NTT;
   endcase
 end
 

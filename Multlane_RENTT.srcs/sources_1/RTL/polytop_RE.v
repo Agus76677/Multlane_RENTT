@@ -34,7 +34,7 @@ module polytop_RE(
 //fsm port signal
 wire [2:0] i;
 wire [6:0] s;
-wire [6:0] k;
+wire [`ADDR_ROM_WIDTH-1:0] k;
 wire wen,ren,en;
 
 //address_generator port signal
@@ -102,6 +102,7 @@ fsm fsm_inst(
 genvar i_AG;
 generate
     for(i_AG = 0; i_AG < `P_HALF; i_AG = i_AG + 1) begin : gen_addr_gen
+        localparam integer B_IDX = i_AG;
         (*DONT_TOUCH = "true"*)
         addr_gen addr_gen_inst(
             .clk                       (clk                       ),//I
@@ -109,7 +110,7 @@ generate
             .i                         (i                         ),//I
             .s                         (s                         ),//I
             .k                         (k                         ),//I
-            .b                         (i_AG                      ),//I
+            .b                         (B_IDX[`P_SHIFT-1:0]      ),//I
             .opcode                    (opcode                    ),//I
             .ie0                       (old_ie0[i_AG]             ),//O
             .io0                       (old_io0[i_AG]             ),//O
@@ -264,7 +265,7 @@ tf_ROM rom0(
 
 
 genvar i_wa;
-generate    
+generate
     for(i_wa = 0; i_wa < `P; i_wa = i_wa + 1) begin : gen_wa
         // 反转映射：将最高位映射到wa[0]，最低位映射到wa[P-1]
         assign wa[i_wa] = w[(`P-1-i_wa)*`DATA_WIDTH + `DATA_WIDTH-1 : (`P-1-i_wa)*`DATA_WIDTH];
