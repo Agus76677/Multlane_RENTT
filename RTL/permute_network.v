@@ -1,7 +1,42 @@
 `include "parameter.v"
 
-// Generic scatter network implemented with Benes-style 2x2 switch fabric
-// Routes out[ sel_in[j] ] = in[j] for j in [0, N)
+// Generic gather network: out[k] = in[ sel_out[k] ]
+module permute_gather #(
+    parameter integer N    = 2*`P,
+    parameter integer W    = 1,
+    parameter integer SELW = `MAP
+) (
+    input  [N*W-1:0]       in_bus,
+    input  [N*SELW-1:0]    sel_out_bus,
+    output [N*W-1:0]       out_bus
+);
+
+    wire [W-1:0]       in_arr   [0:N-1];
+    wire [SELW-1:0]    sel_out  [0:N-1];
+    reg  [W-1:0]       out_arr  [0:N-1];
+    localparam [SELW:0] N_VAL = N;
+
+    genvar gi;
+    generate
+        for (gi = 0; gi < N; gi = gi + 1) begin : gen_unpack
+            assign in_arr[gi]  = in_bus[gi*W + W-1 : gi*W];
+            assign sel_out[gi] = sel_out_bus[gi*SELW + SELW-1 : gi*SELW];
+            assign out_bus[gi*W + W-1 : gi*W] = out_arr[gi];
+        end
+    endgenerate
+
+    integer k;
+    always @(*) begin
+        for (k = 0; k < N; k = k + 1) begin
+            if ({1'b0, sel_out[k]} < N_VAL)
+                out_arr[k] = in_arr[sel_out[k]];
+            else
+                out_arr[k] = {W{1'b0}};
+        end
+    end
+endmodule
+
+// Generic scatter network: out[ sel_in[j] ] = in[j]
 module permute_scatter #(
     parameter integer N    = 2*`P,
     parameter integer W    = 1,
@@ -11,41 +46,18 @@ module permute_scatter #(
     input  [N*SELW-1:0]    sel_in_bus,
     output [N*W-1:0]       out_bus
 );
-    permute_benes #(
-        .N   (N),
-        .W   (W),
-        .SELW(SELW)
-    ) u_perm_benes (
-        .in_bus  (in_bus),
-        .dest_bus(sel_in_bus),
-        .out_bus (out_bus)
-    );
-endmodule
 
-// Benes permutation network built from 2x2 switches, fully reconfigurable
-module permute_benes #(
-    parameter integer N    = 4,
-    parameter integer W    = 1,
-    parameter integer SELW = $clog2(N)
-) (
-    input  [N*W-1:0]       in_bus,
-    input  [N*SELW-1:0]    dest_bus,
-    output [N*W-1:0]       out_bus
-);
+    wire [W-1:0]       in_arr  [0:N-1];
+    wire [SELW-1:0]    sel_in  [0:N-1];
+    reg  [W-1:0]       out_arr [0:N-1];
+    localparam [SELW:0] N_VAL = N;
 
-    localparam integer HALF  = N/2;
-    localparam integer SELW1 = (SELW > 0) ? SELW-1 : 0;
-
-    wire [W-1:0]       in_arr    [0:N-1];
-    wire [SELW-1:0]    dest_arr  [0:N-1];
-    reg  [W-1:0]       out_arr   [0:N-1];
-
-    genvar gi;
+    genvar si;
     generate
-        for (gi = 0; gi < N; gi = gi + 1) begin : gen_pack
-            assign in_arr[gi]  = in_bus[gi*W + W-1 : gi*W];
-            assign dest_arr[gi]= dest_bus[gi*SELW + SELW-1 : gi*SELW];
-            assign out_bus[gi*W + W-1 : gi*W] = out_arr[gi];
+        for (si = 0; si < N; si = si + 1) begin : gen_unpack
+            assign in_arr[si]  = in_bus[si*W + W-1 : si*W];
+            assign sel_in[si]  = sel_in_bus[si*SELW + SELW-1 : si*SELW];
+            assign out_bus[si*W + W-1 : si*W] = out_arr[si];
         end
     endgenerate
 
@@ -56,7 +68,8 @@ module permute_benes #(
         end
 
         for (j = 0; j < N; j = j + 1) begin
-            out_arr[dest_arr[j]] = in_arr[j];
+            if ({1'b0, sel_in[j]} < N_VAL)
+                out_arr[sel_in[j]] = in_arr[j];
         end
     end
 endmodule
