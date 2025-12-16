@@ -83,7 +83,6 @@ wire [`DATA_WIDTH-1:0] wa [0:`P-1];
 //tf address for ROM
 wire [`ADDR_ROM_WIDTH-1:0] tf_address;
 
-(*DONT_TOUCH = "true"*)
 fsm fsm_inst(
     .clk                               (clk                       ),//I
     .rst                               (rst                       ),//I
@@ -100,7 +99,6 @@ fsm fsm_inst(
 genvar i_AG;
 generate
     for(i_AG = 0; i_AG < `P_HALF; i_AG = i_AG + 1) begin : gen_addr_gen
-        (*DONT_TOUCH = "true"*)
         addr_gen addr_gen_inst(
             .clk                       (clk                       ),//I
             .rst                       (rst                       ),//I
@@ -114,7 +112,6 @@ generate
             .io1                       (old_io1[i_AG]             ) //O
         );
 
-        (*DONT_TOUCH = "true"*)
         memory_map memory_map_inst(
             .clk                       (clk                       ),//I
             .rst                       (rst                       ),//I
@@ -148,16 +145,14 @@ generate
     end
 endgenerate
 
-(*DONT_TOUCH = "true"*)
 arbiter m3(
     .BI_bus                            (BI_bus                    ),//I
     .sel_BI_bus                        (sel_BI_bus                ) //0
 );
-                      
-(*DONT_TOUCH = "true"*)
+
 network_bank_in mux1(
     .BA_bus                            (BA_bus                     ),//I
-    .sel_BI_bus                        (sel_BI_bus                 ),//I
+    .BI_bus                            (BI_bus                     ),//I
     .new_address_bus                   (new_address_bus            ) //O
 );
 
@@ -167,7 +162,6 @@ generate
     for(i_dff = 0; i_dff < 2*`P; i_dff = i_dff + 1) begin : gen_dff
         shift#(.SHIFT(`L+1),.data_width(8)) dff_n0(.clk(clk),.rst(rst),.din(new_address[i_dff]),.dout(new_address_ff[i_dff]));
         
-        (*DONT_TOUCH = "true"*)
         bank bank_inst(
             .clk                               (clk                       ),//I
             .waddr                             (new_address_ff[i_dff]     ),//I
@@ -187,7 +181,6 @@ generate
 endgenerate
 
 
-(*DONT_TOUCH = "true"*)
 network_RBFU_in dmux(
     .clk                               (clk                       ),//I
     .rst                               (rst                       ),//I
@@ -200,7 +193,6 @@ genvar i_rbfu;
 generate
     for(i_rbfu = 0; i_rbfu < `P_HALF ; i_rbfu = i_rbfu + 1) begin : gen_rbfu
         //BFU
-        (*DONT_TOUCH = "true"*)
         RBFU u_RBFU(
             .clk                               (clk                       ),
             .rst                               (rst                       ),
@@ -230,16 +222,14 @@ generate
     end
 endgenerate 
 
-(*DONT_TOUCH = "true"*)          
 network_RBFU_out mux3(
     .clk                               (clk                            ),//I
     .rst                               (rst                            ),//I
     .bf_out_bus                        (bf_out_bus                     ),//I
-    .sel_BI_bus                        (sel_BI_bus                     ),//I
+    .BI_bus                            (BI_bus                         ),//I
     .d_in_bus                          (d_in_bus                       ) //O
 );
 
-(*DONT_TOUCH = "true"*)
 tf_address_generator m6(
     .clk                               (clk                            ),//I
     .rst                               (rst                            ),//I
@@ -249,7 +239,6 @@ tf_address_generator m6(
     .tf_address                        (tf_address                     ) //O
 );
 
-(*DONT_TOUCH = "true"*)
 tf_ROM rom0(
     .clk                               (clk                           ),//I
     .A                                 (tf_address                    ),//I
