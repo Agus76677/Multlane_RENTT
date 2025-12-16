@@ -6,7 +6,6 @@
 """
 
 from time import perf_counter
-import pandas as pd
 import random
 from math import log2
 import numpy as np
@@ -664,8 +663,10 @@ if __name__ == '__main__':
     # check_raw_example()    #检查RAW冲突数量
     # conflict_free_map_test() #测试冲突自由映射
 
+    base = os.path.join(os.path.dirname(__file__), "testbench_data")
+
     # 对比
-    compare_results("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/bankf", "./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_f_hat.txt"  ,P)
-    compare_results("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/bankg", "./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_g_hat.txt"  ,P)
-    compare_results("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/bankhat", "./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_h_hat.txt",P)
-    compare_results("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/bankh", "./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_h.txt"      ,P)
+    compare_results(os.path.join(base, "bankf"),   os.path.join(base, "ploy_f_hat.txt"), P)
+    compare_results(os.path.join(base, "bankg"),   os.path.join(base, "ploy_g_hat.txt"), P)
+    compare_results(os.path.join(base, "bankhat"), os.path.join(base, "ploy_h_hat.txt"), P)
+    compare_results(os.path.join(base, "bankh"),   os.path.join(base, "ploy_h.txt"), P)
