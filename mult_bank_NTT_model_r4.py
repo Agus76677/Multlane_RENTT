@@ -1,11 +1,12 @@
 """
-@Descripttion: mult-bank NTT model (本程序只考虑基2,迭代型)
-@version: V1.0
-@Author: HZW
-@Date: 2025-6-16 10:30
+@Descripttion: mult-bank NTT model 改为基4
+@version: V2.0
+@Author: HZW,WH
+@Date: 2025-12-17 10:30
 """
 
 from time import perf_counter
+import pandas as pd
 import random
 from math import log2
 import numpy as np
@@ -18,7 +19,7 @@ n = 8
 zeta = 17    # NTT变换中使用的单位根
 
 N = 2**n  # 多项式环的维度（256）
-P = 2     # 并行蝶形单元数量
+P = 16     # 并行蝶形单元数量
 inv2 = 3303  # inverse of 2
 
 # TF=[]
@@ -91,6 +92,7 @@ def PWM(a_hat, b_hat):
         
     return h_hat
 #--------------------------CFNTT，无冲突内存映射-------------------------------
+#基4改完
 def conflict_free_map(a, N,offset,R, P,mode):
     """
     实现算法7:冲突自由内存映射方案
@@ -105,100 +107,98 @@ def conflict_free_map(a, N,offset,R, P,mode):
     返回:
         tuple: (bank_index, bank_address)
     """
-    d=P
-    # 1. 计算bank数量 B = R × d
-    B = R * d
-    
-    # 2. 计算总位数 T = log_r(N)（基数r=R，因为R是2的幂）
-    T = int(log2(N))
-    
-    # 3. 计算bank编号的位数 M = log_r(B)
-    M = int(log2(B))
-    
-    # 4. 计算步长位数 C = T - M
-    C = T - M
-    
-    # 5. 将地址a表示为二进制
-    a_bin = bin(a)[2:].zfill(T)
-    
-    # 6. 将地址分为高位部分和低位部分
-    # 高位部分: [a_{T-1}, ..., a_{T-C}] (C位)
-    # 低位部分: [a_{M-1}, ..., a_0] (M位)
-    high_part = a_bin[:C] if C > 0 else ''
-    low_part = a_bin[-M:] if M > 0 else ''
-    
-    # 7. 将低位部分转换为整数b
-    b = int(low_part, 2) if low_part else 0
-    
-    # 8. 将高位部分转换为R进制（每log2(R)位一组）
-    k = int(log2(R))
-    if C % k != 0:
-        # 高位部分位数需要是k的倍数，不足则补零
-        padding = k - (C % k)
-        high_part = '0' * padding + high_part
-        C += padding
-    
-    # 9. 将高位部分分组并转换为R进制数字
-    groups = [high_part[i:i+k] for i in range(0, len(high_part), k)]
-    r_digits = [int(group, 2) for group in groups]
-    # 10. 计算步数 SN = (b_{m-1} + b_{m-2} + ... + b_0) mod R
-    SN = sum(r_digits) % R
-    # 11. 计算bank索引 BI = (b + SN × d) mod B
-    BI = (b + SN * d) % B
-    
-    if mode==1:
-        # 将bI循环移位P个位置
-        BI = (BI + P) % B
-    else:
-        # 直接使用计算得到的BI
-        pass
+    d = P
+    B = R * d  # number of banks
 
-    # 12. 计算bank地址 BA = 高位部分的整数值
-    BA = int(high_part, 2)  if high_part else 0
-    BA = BA + offset*N//(2*P)  # 添加偏移量
+    # ---- sanity (可选，但强烈建议保留) ----
+    assert 0 <= a < N
+    assert (N % B) == 0
+    assert (B & (B - 1)) == 0  # power-of-two (for & mask)
+
+    bits_total = int(log2(N))      # T in bits (since r=2)
+    b_bits     = int(log2(B))      # M in bits (since r=2)
+    high_bits  = bits_total - b_bits
+
+    # low part -> b  (step 7)
+    b_mask = (1 << b_bits) - 1
+    b = a & b_mask
+
+    # high part (step 12): BA uses it directly
+    high = a >> b_bits
+
+    # high part -> radix-R digits -> SN (step 8~10)
+    k = int(log2(R))               # bits per radix-R digit
+    digit_cnt = (high_bits + k - 1) // k if high_bits > 0 else 0
+
+    SN = 0
+    tmp = high
+    r_mask = R - 1                 # since R is power-of-two
+    for _ in range(digit_cnt):
+        SN = (SN + (tmp & r_mask)) & r_mask
+        tmp >>= k
+
+    # BI = (b + SN*d) mod B  (step 11)
+    BI = (b + SN * d) & (B - 1)
+
+    # mode shift：建议用 B/2，radix-2时等价于+P，radix-4时自动+2P
+    if mode == 1:
+        BI = (BI + (B >> 1)) & (B - 1)
+
+    bank_depth = N // B
+    BA = high + offset * bank_depth
+
     return BI, BA
 
 
-def conflict_free_map_inverse(BI, BA, N, R, d):
+def conflict_free_map_inverse(BI, BA, N, offset, R, P, mode):
     """
     已知 bank_index(BI) 和 bank_address(BA)，逆推出原始地址 a
+    BI: 0..B-1
+    BA: 0..(N/B - 1) + offset*(N/B)
     """
-    B = R * d
-    T = int(log2(N))
-    M = int(log2(B))
-    C = T - M
-    k = int(log2(R))
+    d = P
+    B = R * d  # number of banks
 
-    # 1. 高位部分补齐到C位
-    high_part = bin(BA)[2:].zfill(C) if C > 0 else ''
-    
-    # 2. 高位分组，转为R进制
-    if C % k != 0:
-        padding = k - (C % k)
-        high_part = '0' * padding + high_part
-        C += padding
-    groups = [high_part[i:i+k] for i in range(0, len(high_part), k)]
-    r_digits = [int(group, 2) for group in groups]
-    
-    # 3. 计算SN
-    SN = sum(r_digits) % R
+    # ---- sanity ----
+    assert (N % B) == 0
+    assert (B & (B - 1)) == 0          # power-of-two
+    assert (R & (R - 1)) == 0          # power-of-two
 
-    # 4. 逆推出b
-    # BI = (b + SN * d) % B  ==>  b = (BI - SN * d) % B
-    b = (BI - SN * d) % B
+    bits_total = int(log2(N))          # total address bits (T in bits, since r=2)
+    b_bits     = int(log2(B))          # low bits used for b (M in bits)
+    high_bits  = bits_total - b_bits
 
-    # 5. 低位部分补齐到M位
-    low_part = bin(b)[2:].zfill(M) if M > 0 else ''
+    bank_depth = N // B
 
-    # 6. 拼接高位和低位
-    a_bin = high_part[-C:] + low_part  # high_part可能有补零，取最后C位
-    a_bin = a_bin.zfill(T)  # 补齐到T位
+    # 0) undo mode shift (must match forward: +B/2)
+    BI0 = BI
+    if mode == 1:
+        BI0 = (BI - (B >> 1)) & (B - 1)
 
-    # 7. 转为十进制
-    a = int(a_bin, 2)
+    # 1) undo offset on BA
+    high = BA - offset * bank_depth
+    if (high < 0) or (high >= bank_depth):
+        raise ValueError(f"BA out of range after offset removal: high={high}, bank_depth={bank_depth}")
+
+    # 2) compute SN from high: sum of radix-R digits mod R
+    k = int(log2(R))                   # bits per radix-R digit
+    digit_cnt = (high_bits + k - 1) // k if high_bits > 0 else 0
+
+    SN = 0
+    tmp = high
+    r_mask = R - 1
+    for _ in range(digit_cnt):
+        SN = (SN + (tmp & r_mask)) & r_mask
+        tmp >>= k
+
+    # 3) recover b from BI = (b + SN*d) mod B
+    b = (BI0 - SN * d) & (B - 1)
+
+    # 4) reconstruct original address a = [high][b]
+    a = (high << b_bits) | b
     return a
-
 #--------------------------多银行存储格式转换-------------------------------
+#基4改完
 def list_to_bank(A, N, P, mode):
     """
     将列表A转换为多银行存储格式
@@ -209,27 +209,34 @@ def list_to_bank(A, N, P, mode):
     输出:
         bank_data: 多bank存储格式,二维数组,row--BI,col--BA
     """
-    num_bank = 2 * P  # 假设bank数量为2*P
+    num_bank = 4 * P  # 假设bank数量为4*P
     bank_len = N // num_bank
     bank_data = [[0 for _ in range(bank_len)] for _ in range(num_bank)]
     for i in range(N):
-        BI, BA = conflict_free_map(i, N, 0, 2, P, mode)
+        BI, BA = conflict_free_map(i, N, 0, 4, P, mode)
+        assert 0 <= BI < num_bank, f"BI out of range: {BI}"
+        assert 0 <= BA < bank_len, f"BA out of range: {BA}, bank_len={bank_len}"
         bank_data[BI][BA] = A[i]
     return bank_data
 
-def bank_to_list(bank_data, N, P):
+def bank_to_list(bank_data, N, P, mode):
     """
     将多bank二维数组格式转换回列表
     """
-    num_bank = 2 * P
+    num_bank = 4 * P
     bank_len = N // num_bank
     A = [0] * N
     for BI in range(num_bank):
         for BA in range(bank_len):
-            a_index = conflict_free_map_inverse(BI, BA, N, 2, P)
+            a_index = conflict_free_map_inverse(BI, BA, N, 0, 4, P, mode)
+
+            assert 0 <= a_index < N, f"a_index out of range: {a_index}"
+
             A[a_index] = bank_data[BI][BA]
     return A
+
 #--------------------------多通道NTT和INTT实现-------------------------------
+#要改基4，且改动挺多的。
 def parallel_NTT(bank,P=32,mode=0):
     """ Parallel NTT """
     v=N//2
@@ -263,6 +270,52 @@ def parallel_NTT(bank,P=32,mode=0):
                 bank_hat[BI_e0][BA_e0]=(bank_hat[BI_e0][BA_e0]+T0)%q
                 bank_hat[BI_o1][BA_o1]=(bank_hat[BI_e1][BA_e1]-T1)%q
                 bank_hat[BI_e1][BA_e1]=(bank_hat[BI_e1][BA_e1]+T1)%q
+    return bank_hat
+
+
+def parallel_NTT_r4(bank, P=32, mode=0):
+    """ Parallel radix-4 NTT (1 radix-4 butterfly per operation, 4 points) """
+    bank_hat = [row[:] for row in bank]
+    L = int(log2(N) // 2)              # log4(N)
+    row_per_stage = N // (4 * P)
+    zeta = TF[1] if (isinstance(TF, list) and len(TF) > 1) else 17
+    I = pow(zeta, N // 4, q)
+    v4 = N // 4  # 每个stage共有 N/4 个 radix-4 butterfly
+    TF_ROM_use_r4 = TF_ROM_data_r4(P)
+    # stage loop
+    for i in range(0, L):                 # stage: i
+        for s in range(0, v4, P):         # cycle组：每cycle推进P个butterfly
+            cnt = i * row_per_stage + (s // P)
+            for b in range(0, P):         # lane: b（可完全展开）
+                blk = (s + b) >> ((n - 2 - 2 * i))                     # 获取s+b的高位
+                k0  = (s + b) & ((N >> (2 * (i + 1))) - 1)               # 获取s+b的低位
+                base = blk << (((n - 2 - 2 * i)) + 2)                    # 位拼接实现
+                m = N >> (2*(i+1))
+                idx0 = base + k0
+                idx1 = idx0 + m
+                idx2 = idx0 + (m<<1)
+                idx3 = idx0 + (m + (m<<1))   # 3*m
+
+                # map to banks (radix-4 map, offset fixed to 0)
+                BI0, BA0 = conflict_free_map(idx0, N, 0, 4, P, mode)
+                BI1, BA1 = conflict_free_map(idx1, N, 0, 4, P, mode)
+                BI2, BA2 = conflict_free_map(idx2, N, 0, 4, P, mode)
+                BI3, BA3 = conflict_free_map(idx3, N, 0, 4, P, mode)
+                # twiddles
+                w1 = TF_ROM_use_r4[cnt][3*b + 0]
+                w2 = TF_ROM_use_r4[cnt][3*b + 1]
+                w3 = TF_ROM_use_r4[cnt][3*b + 2]
+                # radix-4 butterfly
+                T0 = (bank_hat[BI0][BA0] + bank_hat[BI2][BA2] * w2 )% q
+                T1 = (bank_hat[BI0][BA0] - bank_hat[BI2][BA2] * w2 )% q
+                T2 = (bank_hat[BI1][BA1] * w1 + bank_hat[BI3][BA3] * w3 )% q
+                T3 = (bank_hat[BI1][BA1] * w1 - bank_hat[BI3][BA3] * w3 )% q
+
+                bank_hat[BI0][BA0] = (T0 + T2)%q
+                bank_hat[BI1][BA1] = (T1 + T3 * I)%q
+                bank_hat[BI2][BA2] = (T0 - T2)%q
+                bank_hat[BI3][BA3] = (T1 - T3* I)%q
+
     return bank_hat
 
 def parallel_INTT(bank,P=32,mode=0):
@@ -301,6 +354,59 @@ def parallel_INTT(bank,P=32,mode=0):
                 # print(f"bank_hat[{BI_e0}][{BA_e0}],{bank_hat[BI_e0][BA_e0]},bank_hat[{BI_o0}][{BA_o0}]: {bank_hat[BI_o0][BA_o0]}")
                 
     return bank_hat
+def parallel_INTT_r4(bank, P=32, mode=0):
+    """ Parallel radix-4 INTT (hardware-friendly, no sign check) """
+    bank_hat = [row[:] for row in bank]
+
+    L = int(log2(N) // 2)              # log4(N)
+    row_per_stage = N // (4 * P)
+    zeta = TF[1]
+    I = pow(zeta, N // 4, q)           # ω4
+    I_inv = pow(I, q-2, q)             # ω4^{-1}
+    v4 = N // 4
+    INTT_BASE = L * row_per_stage
+    TF_ROM_use_r4 = TF_ROM_data_r4(P)
+
+    # stage loop: inverse direction
+    for i in range(L-1, -1, -1):
+        for s in range(0, v4, P):
+            cnt = INTT_BASE + i * row_per_stage + (s // P)
+
+            for b in range(0, P):
+                # -----------------------------
+                # address generation (same as NTT)
+                blk = (s + b) >> (n - 2 - 2*i)
+                k0  = (s + b) & ((N >> (2*(i+1))) - 1)
+                base = blk << ((n - 2 - 2*i) + 2)
+                m = N >> (2*(i+1))
+                idx0 = base + k0
+                idx1 = idx0 + m
+                idx2 = idx0 + (m << 1)
+                idx3 = idx0 + (m + (m << 1))   # 3*m
+
+                BI0, BA0 = conflict_free_map(idx0, N, 0, 4, P, mode)
+                BI1, BA1 = conflict_free_map(idx1, N, 0, 4, P, mode)
+                BI2, BA2 = conflict_free_map(idx2, N, 0, 4, P, mode)
+                BI3, BA3 = conflict_free_map(idx3, N, 0, 4, P, mode)
+
+                # -----------------------------
+                # inverse twiddle (already folded to < N/2)
+                w1 = TF_ROM_use_r4[cnt][3*b + 0]
+                w2 = TF_ROM_use_r4[cnt][3*b + 1]
+                w3 = TF_ROM_use_r4[cnt][3*b + 2]
+
+                # -------- 逆radix-4蝶形--------
+                T0  = op21(bank_hat[BI0][BA0] + bank_hat[BI2][BA2]) % q
+                T1  = op21(bank_hat[BI0][BA0] - bank_hat[BI2][BA2]) % q
+                T2  = op21(bank_hat[BI1][BA1] + bank_hat[BI3][BA3]) % q
+                T3 = ((op21(bank_hat[BI1][BA1] - bank_hat[BI3][BA3]) % q) * I_inv) % q
+
+                bank_hat[BI0][BA0] = op21(T0 + T2) % q
+                bank_hat[BI1][BA1] = (op21(T1 + T3) * w1) % q
+                bank_hat[BI2][BA2] = (op21(T0 - T2) * w2) % q
+                bank_hat[BI3][BA3] = (op21(T1 - T3) * w3) % q
+
+    return bank_hat
 
 #karatsuba PWM0,PWM1
 def PWM0(a0,a1,b0,b1):
@@ -321,6 +427,7 @@ def PWM1(s0,s1,m0,m1,i):
     h1 = (s0 * s1-m0-m1) % q
     return h0, h1
 
+#要改基4
 def parallel_PWM(bank,P,N):
     """_summary_
     Args:
@@ -367,7 +474,83 @@ def parallel_PWM(bank,P,N):
                 bank[BI_s0][BA_s0],bank[BI_s1][BA_s1]=PWM1(s0,s1,m0,m1,i_idx)
                 # print(f"bank[{BI_s0}][{BA_s0}]:{bank[BI_s0][BA_s0]},bank[{BI_s1}][{BA_s1}]:{bank[BI_s1][BA_s1]}")
     return bank
+def parallel_PWM_r4(bank,P,N):
+    """_summary_
+    Args:
+        P:并行数
+        bank:bank_f||bank_g
+    """
+    # -------- constants consistent with TF_ROM_data_r4 --------
+    L = int(log2(N) // 2)                 # log4(N)
+    row_per_stage = N // (4 * P)
+    PWM_BASE = 2 * L * row_per_stage      # PWM 起始行号（紧跟 NTT+INTT）
 
+    TF_ROM_use_r4 = TF_ROM_data_r4(P)
+
+    bank_len = len(bank[0]) // 2          # per-bank length for ONE polynomial (f or g)
+    # =========================================================
+    # PWM0: write back (s0,s1) into f-half, (m0,m1) into g-half
+    # =========================================================
+    for i in range(N // (2 * P)):         # total PWM instances = N/2; each cycle handles P
+        for b in range(P):
+            i_idx = i * P + b             # PWM instance index in [0 .. N/2-1]
+            a_idx0 = 2 * i_idx
+            a_idx1 = a_idx0 + 1
+
+            # ---- f side (mode=0) ----
+            BI_a0, BA_a0 = conflict_free_map(a_idx0, N, 0, 4, P, mode=0)
+            BI_a1, BA_a1 = conflict_free_map(a_idx1, N, 0, 4, P, mode=0)
+
+            # ---- g side (mode=1), BA shifted to second half ----
+            BI_b0, BA_b0 = conflict_free_map(a_idx0, N, 0, 4, P, mode=1)
+            BI_b1, BA_b1 = conflict_free_map(a_idx1, N, 0, 4, P, mode=1)
+            BA_b0 += bank_len
+            BA_b1 += bank_len
+
+            a0 = bank[BI_a0][BA_a0]
+            a1 = bank[BI_a1][BA_a1]
+            b0 = bank[BI_b0][BA_b0]
+            b1 = bank[BI_b1][BA_b1]
+
+            s0, s1, m0, m1 = PWM0(a0, a1, b0, b1)
+
+            bank[BI_a0][BA_a0] = s0
+            bank[BI_a1][BA_a1] = s1
+            bank[BI_b0][BA_b0] = m0
+            bank[BI_b1][BA_b1] = m1
+
+    # =========================================================
+    # PWM1: read (s0,s1,m0,m1) and write back (h0,h1) into f-half
+    # =========================================================
+    for i in range(N // (2 * P)):
+        cnt = PWM_BASE + i                # one ROM row per "cycle group i"
+        for b in range(P):
+            i_idx = i * P + b
+            a_idx0 = 2 * i_idx
+            a_idx1 = a_idx0 + 1
+
+            BI_s0, BA_s0 = conflict_free_map(a_idx0, N, 0, 4, P, mode=0)
+            BI_s1, BA_s1 = conflict_free_map(a_idx1, N, 0, 4, P, mode=0)
+
+            BI_m0, BA_m0 = conflict_free_map(a_idx0, N, 0, 4, P, mode=1)
+            BI_m1, BA_m1 = conflict_free_map(a_idx1, N, 0, 4, P, mode=1)
+            BA_m0 += bank_len
+            BA_m1 += bank_len
+
+            s0 = bank[BI_s0][BA_s0]
+            s1 = bank[BI_s1][BA_s1]
+            m0 = bank[BI_m0][BA_m0]
+            m1 = bank[BI_m1][BA_m1]
+
+            tw = TF_ROM_use_r4[cnt][3*b + 0]     # each lane has its own PWM twiddle
+
+            h0 = (m0 + m1 * tw) % q
+            h1 = (s0 * s1 - m0 - m1) % q
+
+            bank[BI_s0][BA_s0] = h0
+            bank[BI_s1][BA_s1] = h1
+
+    return bank
 ##--------------------------Check RAW -------------------------
 def check_raw(N,P,L):
   """
@@ -400,55 +583,67 @@ def check_raw_example():
             flag = check_raw(N, P, L)
             print(f"N={N}, P={P}, L={L} -> RAW冲突数量: {flag}")
                                                             
-#--------------------------软件模型测试代码-------------------------------
 def main():
     """
-    num测试测试
+    对照实验：
+      baseline: In_place_NTT + PWM + In_place_INTT   (朴素/基2参考)
+      r4-path : parallel_NTT_r4 + parallel_PWM_r4 + parallel_INTT_r4 (并行/基4实现)
     """
-    num=100
-    b = [0] * 256
+    num = 100
+
+    # ----------------------------
+    # 固定 g = [1,0,0,...] 作为 b
+    # ----------------------------
+    b = [0] * N
     b[0] = 1
+
+    # baseline NTT(b)
     fftb = In_place_NTT(b)
-    
-    bank_b = list_to_bank(b,N,P,mode=1) #g
-    fftb_bank= parallel_NTT(bank_b,P,mode=1)
-    # fftb1= bank_to_list(fftb_bank, N, P)
-    for _ in range(0, num):
-        f = []
-        for i in range(256):
-            f.append(random.randint(0, 3328))
-            # f.append(i)
+
+    # r4-path NTT(b) in bank (mode=1 表示 g 路径)
+    bank_b = list_to_bank(b, N, P, mode=1)
+    fftb_bank = parallel_NTT_r4(bank_b, P, mode=1)
+
+    for _ in range(num):
+        # ----------------------------
+        # 随机 f
+        # ----------------------------
+        f = [random.randint(0, q - 1) for _ in range(N)]
+
+        # ===== baseline (朴素) =====
         ffta = In_place_NTT(f)
-        # print("ffta:", ffta)
-        
-        bank_a = list_to_bank(f,N,P,mode=0)
-        ffta_bank= parallel_NTT(bank_a,P,mode=0)
-        # ffta1 = bank_to_list(ffta_bank, N, P)
-        
-        temp=PWM(ffta, fftb)
-        product=In_place_INTT(temp)
-        # print("product:", product)
-        
-        
-        bank = np.hstack((ffta_bank, fftb_bank))
-        # print("bank:",bank)
-        temp1=parallel_PWM(bank,P,N)
-        
-        bank_temp= temp1[:, :temp1.shape[1]//2]  # 只取前半部分
-        # print("bank_temp:", bank_temp)
-        
-        # bank_temp   = list_to_bank(temp1, N, P)
-        product_bank = parallel_INTT(bank_temp, P)
-        product1= bank_to_list(product_bank, N, P)
+        temp  = PWM(ffta, fftb)
+        product = In_place_INTT(temp)
+
+        # ===== r4-path (并行基4) =====
+        bank_a = list_to_bank(f, N, P, mode=0)
+        ffta_bank = parallel_NTT_r4(bank_a, P, mode=0)
+
+        # bank = [f_hat || g_hat]  (按行拼接列方向)
+        bank = np.hstack((np.array(ffta_bank, dtype=int),
+                          np.array(fftb_bank, dtype=int)))
+
+        # 并行 PWM（输出写回到 f-half）
+        bank_after_pwm = parallel_PWM_r4(bank, P, N)
+
+        # 只取前半部分（h_hat 所在的 f-half）
+        bank_len = bank_after_pwm.shape[1] // 2
+        h_hat_bank = bank_after_pwm[:, :bank_len]
+
+        # INTT (radix-4)
+        product_bank = parallel_INTT_r4(h_hat_bank, P, mode=0)
+
+        # 回写成 list
+        product1 = bank_to_list(product_bank, N, P, mode=0)
+
         if product != product1:
-            print("product:",product)
-            print("product1:",product1)
             print("error")
+            print("product :", product)
+            print("product1:", product1)
+            return
         else:
-            # print("product:",product)
-            # print("product1:",product1)
             print("pass")
-            
+
             
 #-------------------------------硬件测试数据bin文件生成-----------------------------------
 #bank_to_bin
@@ -477,7 +672,8 @@ def write_binary_file_res(filename, matrix):
             f.write(binary_row + '\n')
     print(f"Binary file written to {filename}")
         
-        
+#要改基4，要根据机理进行改动
+#         
 def TF_ROM_data(P):
     """_summary_
     Args:
@@ -485,9 +681,18 @@ def TF_ROM_data(P):
     Returns:
         TF_ROM: twiddle factor ROM数据
     """
-    col = P  
-    row = 2*N*7//(2*P)+N//P
+    R = 4
+    L = int(log2(N) // 2)          # log4(N)
+    row_per_stage = N // (4 * P)   # 固定
+    row = 2 * L * row_per_stage + (N // P)
+    col = 3 * P
+ 
     TF_ROM_data = [[0 for _ in range(col)] for _ in range(row)]
+
+    HALF = N >> 1                     # N/2
+    MASK = HALF - 1                   # 0x7F for N=256
+    SIGN_SHIFT = n - 1                # 7 for N=256
+
     #NTT
     for i in range(0, n-1):
         for s in range(0, N//2, P):
@@ -518,14 +723,135 @@ def TF_ROM_data(P):
                 cnt=2*i+k+2*(n-1)*(N//(2*P))
                 TF_ROM_data[cnt][2*b+1]=tw
     return TF_ROM_data
-                
+
+def TF_ROM_data_r4(P):
+    """_summary_
+    Args:
+        P: PE数量
+    Returns:
+        TF_ROM: twiddle factor ROM数据
+    """
+    R = 4
+    L = int(log2(N) // 2)          # log4(N)
+    row_per_stage = N // (4 * P)   # 固定
+    row = 2 * L * row_per_stage + (N // (2 * P))
+    col = 3 * P
+ 
+    TF_ROM_data_r4 = [[0 for _ in range(col)] for _ in range(row)]
+
+    HALF = N >> 1                     # N/2
+    MASK = HALF - 1                   # 0x7F for N=256
+    SIGN_SHIFT = n - 1                # 7 for N=256
+
+    # =========================
+    # NTT (radix-4)
+    # =========================
+    for i in range(0, L):  # stage index: 0..L-1
+        m = N >> (2 * (i + 1))
+        for s in range(0, N // 4, P):  # s 对应“cycle组”，每次推进 P 个蝶形
+            cnt = i * row_per_stage + (s // P)
+            for b in range(0, P):     # lane
+                k0 = (s + b) & (m - 1)
+                exp0 = (k0 << (2 * i))            # w1指数
+                exp1 = (k0 << (2 * i)) * 2
+                exp2 = (k0 << (2 * i)) * 3
+
+                # ---- w1: exp0 ----
+                iw0 = exp0 & MASK                 # mod (N/2)
+                iw_brv0 = brv(iw0)
+                tw0 = TF[iw_brv0]
+                if (exp0 >> SIGN_SHIFT) & 1:      # 是否跨过 N/2
+                    tw0 = q - tw0
+
+                # ---- w2: exp1 ----
+                iw1 = exp1 & MASK
+                iw_brv1 = brv(iw1)
+                tw1 = TF[iw_brv1]
+                if (exp1 >> SIGN_SHIFT) & 1:
+                    tw1 = q - tw1
+
+                # ---- w3: exp2 ----
+                iw2 = exp2 & MASK
+                iw_brv2 = brv(iw2)
+                tw2 = TF[iw_brv2]
+                if (exp2 >> SIGN_SHIFT) & 1:
+                    tw2 = q - tw2
+
+                # 存到ROM：每lane占 3 个位置
+                TF_ROM_data_r4[cnt][3*b + 0] = tw0   # w1
+                TF_ROM_data_r4[cnt][3*b + 1] = tw1   # w2
+                TF_ROM_data_r4[cnt][3*b + 2] = tw2   # w3
+    # =========================
+    # INTT (radix-4)
+    # =========================
+    INTT_BASE = L * row_per_stage   # INTT 起始行号
+
+    for i in range(L-1, -1, -1):        # inverse stage order
+        m = N >> (2 * (i + 1))
+        for s in range(0, N // 4, P):
+            cnt = INTT_BASE + i * row_per_stage + (s // P)
+            for b in range(0, P):
+                k0 = (s + b) & (m - 1)
+
+                # NTT: exp = (k0 << (2*i)) * {1,2,3}
+                # INTT: use negative exponent -> map into [0..N-1], then TF+brv
+
+                exp0n = (- (k0 << (2 * i))) % N
+                exp1n = (-(k0 << (2 * i)) * 2) % N
+                exp2n = (-(k0 << (2 * i)) * 3) % N
+
+                # ---- w1^{-1}: exp0n ----
+                iw0 = exp0n & MASK
+                iw_brv0 = brv(iw0)
+                tw0 = TF[iw_brv0]
+                if (exp0n >> SIGN_SHIFT) & 1:
+                    tw0 = q - tw0
+
+                # ---- w2^{-1}: exp1n ----
+                iw1 = exp1n & MASK
+                iw_brv1 = brv(iw1)
+                tw1 = TF[iw_brv1]
+                if (exp1n >> SIGN_SHIFT) & 1:
+                    tw1 = q - tw1
+
+                # ---- w3^{-1}: exp2n ----
+                iw2 = exp2n & MASK
+                iw_brv2 = brv(iw2)
+                tw2 = TF[iw_brv2]
+                if (exp2n >> SIGN_SHIFT) & 1:
+                    tw2 = q - tw2
+
+                TF_ROM_data_r4[cnt][3*b + 0] = tw0  # w1^{-1}
+                TF_ROM_data_r4[cnt][3*b + 1] = tw1  # w2^{-1}
+                TF_ROM_data_r4[cnt][3*b + 2] = tw2  # w3^{-1}
+    # =========================
+    # PWM1 (radix-4 friendly)
+    # =========================
+    PWM_BASE = 2 * L * row_per_stage   # PWM 起始行号
+
+    for i in range(N // (2 * P)):          # 多项式块索引
+        cnt = PWM_BASE + i
+        for b in range(P):             # 每个 lane 一组 PWM
+            # 与原始基2代码语义完全一致的 index
+            i_idx = i * P + b
+            index = 2 * brv(i_idx) + 1
+            tw = TF[index & MASK]
+            if (index >> SIGN_SHIFT) & 1:
+                tw = q - tw
+            TF_ROM_data_r4[cnt][3*b + 0] = tw
+            TF_ROM_data_r4[cnt][3*b + 1] = 0
+            TF_ROM_data_r4[cnt][3*b + 2] = 0
+
+
+    return TF_ROM_data_r4
+                                
     
 def generate_test_data():
     """
     生成测试数据
     """
     # 清除 ./testbench_data/ 目录下的所有文件
-    testbench_dir = './Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/'
+    testbench_dir = './Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/'
     # 确保目录存在
     if os.path.exists(testbench_dir):
         # 列出目录中的所有文件并删除
@@ -547,42 +873,42 @@ def generate_test_data():
     # 生成多项式g,f
     g = [0] * 256
     g[0] = 1
-    np.savetxt("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_g.txt", g, fmt="%d", delimiter=",")
+    np.savetxt("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_g.txt", g, fmt="%d", delimiter=",")
     f = []
     for i in range(256):
         f.append(i)
-    np.savetxt("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_f.txt", f, fmt="%d", delimiter=",")
+    np.savetxt("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_f.txt", f, fmt="%d", delimiter=",")
     
     #将多项式g，f转换为多bank存储格式,并写入bin
     bank_f= list_to_bank(f,N,P,mode=0) #f
     bank_g= list_to_bank(g,N,P,mode=1) #g
     bank_input = np.hstack((bank_f, bank_g))
-    save_bank_rows_as_bin(bank_input, prefix="./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/bank_input")
+    save_bank_rows_as_bin(bank_input, prefix="./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/bank_input")
     
     bank_g = list_to_bank(g,N,P,mode=1) #g
     g_hat_bank= parallel_NTT(bank_g,P,mode=1)
     ploy_g_hat= bank_to_list(g_hat_bank, N, P)
-    np.savetxt("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_g_hat.txt", ploy_g_hat, fmt="%d", delimiter=",")
+    np.savetxt("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_g_hat.txt", ploy_g_hat, fmt="%d", delimiter=",")
 
     bank_f = list_to_bank(f,N,P,mode=0)
     f_hat_bank= parallel_NTT(bank_f,P,mode=0)
     ploy_f_hat= bank_to_list(f_hat_bank, N, P)
-    np.savetxt("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_f_hat.txt", ploy_f_hat, fmt="%d", delimiter=",")
+    np.savetxt("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_f_hat.txt", ploy_f_hat, fmt="%d", delimiter=",")
 
     bank = np.hstack((f_hat_bank, g_hat_bank))
     temp1=parallel_PWM(bank,P,N)
     h_hat_bank= temp1[:, :temp1.shape[1]//2]  # 只取前半部分
     ploy_h_hat= bank_to_list(h_hat_bank, N, P)
-    np.savetxt("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_h_hat.txt",  ploy_h_hat, fmt="%d", delimiter=",")
+    np.savetxt("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_h_hat.txt",  ploy_h_hat, fmt="%d", delimiter=",")
 
     h_bank = parallel_INTT(h_hat_bank, P)
     ploy_h= bank_to_list(h_bank, N, P)
-    np.savetxt("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/ploy_h.txt", ploy_h, fmt="%d", delimiter=",")
+    np.savetxt("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_h.txt", ploy_h, fmt="%d", delimiter=",")
     
     #TF_ROM数据
     TF_ROM  = TF_ROM_data(P)
-    np.savetxt("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/TF_ROM.txt", TF_ROM, fmt="%d", delimiter=",")
-    write_binary_file_res("./Multlane_RENTT_2018_otp1.srcs/sources_1/software/testbench_data/TF_ROM.bin", TF_ROM)
+    np.savetxt("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/TF_ROM.txt", TF_ROM, fmt="%d", delimiter=",")
+    write_binary_file_res("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/TF_ROM.bin", TF_ROM)
 
 def conflict_free_map_test():
     print("Addr",0, "PE",4,"mode",0,"offset", 0,   conflict_free_map(0,  256,0, 2, 4, 0))
@@ -657,16 +983,14 @@ def compare_results(bank_file_prefix="./testbench_data/bank", reference_file="./
 
           
 if __name__ == '__main__':
-    # main()                 #测试算法模型
+    main()                 #测试算法模型
     # print("test over")
     # generate_test_data()     #生成测试数据
     # check_raw_example()    #检查RAW冲突数量
     # conflict_free_map_test() #测试冲突自由映射
 
-    base = os.path.join(os.path.dirname(__file__), "testbench_data")
-
     # 对比
-    compare_results(os.path.join(base, "bankf"),   os.path.join(base, "ploy_f_hat.txt"), P)
-    compare_results(os.path.join(base, "bankg"),   os.path.join(base, "ploy_g_hat.txt"), P)
-    compare_results(os.path.join(base, "bankhat"), os.path.join(base, "ploy_h_hat.txt"), P)
-    compare_results(os.path.join(base, "bankh"),   os.path.join(base, "ploy_h.txt"), P)
+    # compare_results("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/bankf", "./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_f_hat.txt"  ,P)
+    # compare_results("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/bankg", "./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_g_hat.txt"  ,P)
+    # compare_results("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/bankhat", "./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_h_hat.txt",P)
+    # compare_results("./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/bankh", "./Multlane_RENTT_2018.srcs/sources_1/software/testbench_data/ploy_h.txt"      ,P)
