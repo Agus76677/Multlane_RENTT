@@ -5,19 +5,20 @@
 // `define OP2  //P=8时    
 // `define OP3  //P=16时
 
-`define PIPE1  //L=1时
+// `define PIPE1  //L=1时
 // `define PIPE2  //L=2时
 // `define PIPE3  //L=3时
 // `define PIPE4  //L=4时
 // `define PIPE5  //L=5时
-// `define PIPE6  //L=6时
+`define PIPE6  //L=6时
 // `define PIPE7  //L=7时
 // `define PIPE8  //L=8时
 
 //--------------操作类型------------
-`define NTT  2'b00
-`define INTT 2'b01
-`define PWM  2'b10
+`define NTT  2'b00 
+`define INTT 2'b01 
+`define PWM0 2'b10 
+`define PWM1 2'b11 
 
 //-------------参数定义------------
 // 根据OP宏自动配置P参数
