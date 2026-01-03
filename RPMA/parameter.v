@@ -1,8 +1,7 @@
-
 //------------编译定义-------------
 `define OP0  //P=2时
 // `define OP1  //P=4时
-// `define OP2  //P=8时    
+// `define OP2  //P=8时
 // `define OP3  //P=16时
 
 `define PIPE1  //L=1时
@@ -15,10 +14,10 @@
 // `define PIPE8  //L=8时
 
 //--------------操作类型------------
-`define NTT  2'b00 
-`define INTT 2'b01 
-`define PWM0 2'b10 
-`define PWM1 2'b11 
+`define NTT  2'b00
+`define INTT 2'b01
+`define PWM  2'b10
+`define OPC_RSV 2'b11
 
 //-------------参数定义------------
 // 根据OP宏自动配置P参数
@@ -65,7 +64,7 @@
 
 //pack unpack
 `define BI_PACK   (2*`P)*`MAP //pack size
-`define BA_PACK   8*(2*`P)    //pack size 
+`define BA_PACK   8*(2*`P)    //pack size
 `define DATA_PACK 12*(2*`P)  //data pack size
 
 //data size

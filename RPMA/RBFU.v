@@ -1,200 +1,359 @@
 `timescale 1ns / 1ps
 `include "parameter.v"
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2025/05/04 20:53:41
-// Design Name: by hzw
-// Module Name: RBFU_O
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 // opcode:00 NTT
 // opcode:01 INTT
-// opcode:10 PWM0
-// opcode:11 PWM1
-// input   a0 b0 w0，a1 b1 w1 
-// output  Dout0, Dout1, Dout2, Dout3,
-// NTT:    Dout0 =  a0 + b0*w0        Dout1 =  a0 - b0*w0    Dout2 =  a1 + b1*w1          Dout3 =  a1 - b1*w1    
-// INTT:   Dout0 = (a0 + b0)/2        Dout1 = (b0 - a0)*w0/2 Dout2 = (a1 + b1)/2          Dout3 = (b1 - a1)*w1/2 
-// PWM0:   Dout0 =  a0 + b0(s0)       Dout1 = a1 + b1(s1)    Dout2 =  a0*w0(m0)           Dout3 =  b1*w1(m1])                 
-// PWM1:   Dout0 =  a1 + b1*w1(h[2i]) Dout1 =  a0*b0-a1-b1(h[2i+1])    Dout2 =0           Dout3 = 0
-//s0=f[2i]+f[2i+1],m0=f[2i]*g[2i],s1=g[2i]+g[2i+1],m1=f[2i+1]*g[2i+1]
-//h[2i]==m0+m1*w
-//h[2i+1]=s0*s1-m0-m1=(f[2i]+f[2i+1])*(g[2i]+g[2i+1])-f[2i+1]*g[2i+1]-f[2i]*g[2i])
-
+// opcode:10 PWM
+// opcode:11 reserved
+// RAD4 端口映射：
+//   a0=rbfu_a0, a1=rbfu_b0, a2=rbfu_a1, a3=rbfu_b1
+//   w1=rbfu_w0, w2=rbfu_w1, w3=rbfu_w2
+// RAD2 端口映射：
+//   pair0: (a0=rbfu_a0,b0=rbfu_b0,w0=rbfu_w0)
+//   pair1: (a1=rbfu_a1,b1=rbfu_b1,w1=rbfu_w1)
+// PWM 映射：
+//   f0=rbfu_a0, g0=rbfu_b0, f1=rbfu_a1, g1=rbfu_b1, tw=rbfu_tw_pwm
+//////////////////////////////////////////////////////////////////////////////////
 `ifdef PIPE1
 module RBFU(
-    input  clk,
-    input  rst,
-    input  [`DATA_WIDTH-1 : 0] rbfu_a0,rbfu_b0,rbfu_w0, //第一组系数
-    input  [`DATA_WIDTH-1 : 0] rbfu_a1,rbfu_b1,rbfu_w1, //第二组系数
-    input  [ 1            : 0] opcode, 
+    input                      clk,
+    input                      rst,
+    input                      radix_mode, //0:RAD2 1:RAD4
+    input  [`DATA_WIDTH-1 : 0] rbfu_a0,rbfu_b0,rbfu_w0,
+    input  [`DATA_WIDTH-1 : 0] rbfu_a1,rbfu_b1,rbfu_w1,
+    input  [`DATA_WIDTH-1 : 0] rbfu_w2,
+    input  [`DATA_WIDTH-1 : 0] rbfu_tw_pwm,
+    input  [1:0]               opcode,
     output [`DATA_WIDTH-1 : 0] Dout0,
     output [`DATA_WIDTH-1 : 0] Dout1,
     output [`DATA_WIDTH-1 : 0] Dout2,
     output [`DATA_WIDTH-1 : 0] Dout3
 );
 
-wire [`DATA_WIDTH-1:0] a0, b0, a1, b1, w0, w1;
-assign a0 = rbfu_a0;
-assign b0 = rbfu_b0;
-assign a1 = rbfu_a1;
-assign b1 = rbfu_b1;
-assign w0 = rbfu_w0;
-assign w1 = rbfu_w1;
+localparam DW      = `DATA_WIDTH;
+localparam I_CONST = 12'd1729;
+localparam I_INV   = 12'd1600;
 
-//add0 输入 输出
-wire  [`DATA_WIDTH-1: 0] ma0_a0, ma0_s0;
-wire  [`DATA_WIDTH-1: 0] ma0_b0;
-wire  [`DATA_WIDTH-1: 0] ma0_a1, ma0_s1;
-wire  [`DATA_WIDTH-1: 0] ma0_b1;
-assign ma0_a0 = a0;
-assign ma0_b0 = b0;
-assign ma0_a1 = a1;
-assign ma0_b1 = b1;                        
-MA u_MA0(.MA_a(ma0_a0),.MA_b(ma0_b0),.MA_s(ma0_s0));                   
-MA u_MA1(.MA_a(ma0_a1),.MA_b(ma0_b1),.MA_s(ma0_s1));
+wire [DW-1:0] r4_in_a0 = rbfu_a0;
+wire [DW-1:0] r4_in_a1 = rbfu_b0;
+wire [DW-1:0] r4_in_a2 = rbfu_a1;
+wire [DW-1:0] r4_in_a3 = rbfu_b1;
 
-//sub0 输入 输出
-wire [`DATA_WIDTH-1:0] ms0_a0, ms0_b0;
-wire [`DATA_WIDTH-1:0] ms0_s0;
-wire [`DATA_WIDTH-1:0] ms0_a1, ms0_b1;
-wire [`DATA_WIDTH-1:0] ms0_s1;
-assign ms0_a0 = b0;
-assign ms0_b0 = a0;
-assign ms0_a1 = b1;
-assign ms0_b1 = a1;
-MS u_MS0(.MS_a(ms0_a0),.MS_b(ms0_b0),.MS_s(ms0_s0));
-MS u_MS1(.MS_a(ms0_a1),.MS_b(ms0_b1),.MS_s(ms0_s1));
+//====================== mul pool ======================//
+reg  [DW-1:0] mul0_a, mul0_b;
+reg  [DW-1:0] mul1_a, mul1_b;
+reg  [DW-1:0] mul2_a, mul2_b;
+reg  [DW-1:0] mul3_a, mul3_b;
+wire [DW-1:0] mul0_p, mul1_p, mul2_p, mul3_p;
 
-//第一级 选择器输出  o e 
-reg [`DATA_WIDTH-1:0] o0, e0;
-reg [`DATA_WIDTH-1:0] o1, e1;
-always@(*) begin
-    case(opcode) 
-    `NTT  : begin o0 = a0    ; e0 = b0    ;o1 = a1    ;  e1 = b1     ;end
-    `INTT : begin o0 = ma0_s0; e0 = ms0_s0;o1 = ma0_s1;  e1 = ms0_s1 ;end
-    `PWM0 : begin o0 = ma0_s0; e0 = a1    ;o1 = ma0_s1;  e1 = b1     ;end
-    `PWM1 : begin o0 = ma0_s1; e0 = b0    ;o1 = a1    ;  e1 = b1     ;end
-    default:begin o0 = 12'd0 ; e0 = 12'd0 ;o1 = 12'd0 ;  e1 = 12'd0  ;end
-    endcase
+Modmul u_Modmul0(.clk(clk), .A(mul0_a), .B(mul0_b), .R(mul0_p));
+Modmul u_Modmul1(.clk(clk), .A(mul1_a), .B(mul1_b), .R(mul1_p));
+Modmul u_Modmul2(.clk(clk), .A(mul2_a), .B(mul2_b), .R(mul2_p));
+Modmul u_Modmul3(.clk(clk), .A(mul3_a), .B(mul3_b), .R(mul3_p));
+
+//====================== RAD2 path ======================//
+wire [DW-1:0] rad2_ma0_s, rad2_ma1_s;
+wire [DW-1:0] rad2_ms0_s, rad2_ms1_s;
+wire [DW-1:0] rad2_div0_s, rad2_div1_s;
+wire [DW-1:0] rad2_sub0_s, rad2_sub1_s;
+wire [DW-1:0] rad2_sum0_div2, rad2_sum1_div2;
+wire [DW-1:0] rad2_sub0_div2, rad2_sub1_div2;
+
+reg  [DW-1:0] rad2_a0_r, rad2_a1_r;
+reg  [DW-1:0] rad2_a0_ff, rad2_a1_ff;
+reg  [DW-1:0] rad2_b0_r, rad2_b1_r;
+reg  [DW-1:0] rad2_w0_r, rad2_w1_r;
+reg          rad2_ntt_en_d, rad2_ntt_en_ff;
+reg          rad2_intt_en_d, rad2_intt_en_ff;
+reg  [DW-1:0] rad2_sum0_div2_r, rad2_sum1_div2_r;
+reg  [DW-1:0] rad2_sum0_div2_ff, rad2_sum1_div2_ff;
+reg  [DW-1:0] rad2_sub0_div2_r, rad2_sub1_div2_r;
+
+MA u_rad2_ma0(.MA_a(rad2_a0_ff), .MA_b(mul0_p), .MA_s(rad2_ma0_s));
+MA u_rad2_ma1(.MA_a(rad2_a1_ff), .MA_b(mul1_p), .MA_s(rad2_ma1_s));
+MS u_rad2_ms0(.MS_a(rad2_a0_ff), .MS_b(mul0_p), .MS_s(rad2_ms0_s));
+MS u_rad2_ms1(.MS_a(rad2_a1_ff), .MS_b(mul1_p), .MS_s(rad2_ms1_s));
+
+MA u_rad2_sum0(.MA_a(rbfu_a0), .MA_b(rbfu_b0), .MA_s(rad2_div0_s));
+MA u_rad2_sum1(.MA_a(rbfu_a1), .MA_b(rbfu_b1), .MA_s(rad2_div1_s));
+MS u_rad2_diff0(.MS_a(rbfu_b0), .MS_b(rbfu_a0), .MS_s(rad2_sub0_s));
+MS u_rad2_diff1(.MS_a(rbfu_b1), .MS_b(rbfu_a1), .MS_s(rad2_sub1_s));
+
+Div2 u_rad2_div_sum0(.x(rad2_div0_s), .y(rad2_sum0_div2));
+Div2 u_rad2_div_sum1(.x(rad2_div1_s), .y(rad2_sum1_div2));
+Div2 u_rad2_div_sub0(.x(rad2_sub0_s), .y(rad2_sub0_div2));
+Div2 u_rad2_div_sub1(.x(rad2_sub1_s), .y(rad2_sub1_div2));
+
+//====================== RAD4 NTT =======================//
+reg  [DW-1:0] r4_a0_r, r4_a1_r, r4_a2_r, r4_a3_r;
+reg          r4_ntt_en_d1, r4_ntt_en_d2;
+
+wire [DW-1:0] r4_t0, r4_t1, r4_t2, r4_t3;
+MA u_r4_t0(.MA_a(r4_a0_r), .MA_b(mul0_p), .MA_s(r4_t0));
+MS u_r4_t1(.MS_a(r4_a0_r), .MS_b(mul0_p), .MS_s(r4_t1));
+MA u_r4_t2(.MA_a(mul1_p), .MA_b(mul2_p), .MA_s(r4_t2));
+MS u_r4_t3(.MS_a(mul1_p), .MS_b(mul2_p), .MS_s(r4_t3));
+
+reg [DW-1:0] r4_t0_ff, r4_t1_ff, r4_t2_ff;
+reg [DW-1:0] r4_t3_reg;
+reg [DW-1:0] r4_t4_ff;
+
+wire [DW-1:0] r4_y0, r4_y1, r4_y2, r4_y3;
+MA u_r4_y0(.MA_a(r4_t0_ff), .MA_b(r4_t2_ff), .MA_s(r4_y0));
+MS u_r4_y2(.MS_a(r4_t0_ff), .MS_b(r4_t2_ff), .MS_s(r4_y2));
+MA u_r4_y1(.MA_a(r4_t1_ff), .MA_b(r4_t4_ff), .MA_s(r4_y1));
+MS u_r4_y3(.MS_a(r4_t1_ff), .MS_b(r4_t4_ff), .MS_s(r4_y3));
+
+//====================== RAD4 INTT ======================//
+wire [DW-1:0] intt_y0, intt_y2, intt_y1, intt_y3;
+assign intt_y0 = rbfu_a0;
+assign intt_y2 = rbfu_b0;
+assign intt_y1 = rbfu_a1;
+assign intt_y3 = rbfu_b1;
+
+wire [DW-1:0] intt_u0, intt_u1, intt_u2, intt_d;
+MA u_intt_u0 (.MA_a(intt_y0), .MA_b(intt_y2), .MA_s(intt_u0));
+MS u_intt_u2 (.MS_a(intt_y0), .MS_b(intt_y2), .MS_s(intt_u2));
+MA u_intt_u1 (.MA_a(intt_y1), .MA_b(intt_y3), .MA_s(intt_u1));
+MS u_intt_d  (.MS_a(intt_y1), .MS_b(intt_y3), .MS_s(intt_d));
+
+wire [DW-1:0] intt_u0_div2, intt_u1_div2, intt_u2_div2, intt_d_div2;
+Div2 u_intt_div_u0(.x(intt_u0), .y(intt_u0_div2));
+Div2 u_intt_div_u1(.x(intt_u1), .y(intt_u1_div2));
+Div2 u_intt_div_u2(.x(intt_u2), .y(intt_u2_div2));
+Div2 u_intt_div_d (.x(intt_d),  .y(intt_d_div2));
+
+reg [DW-1:0] intt_u0_r, intt_u1_r, intt_u2_r;
+reg [DW-1:0] intt_w1_r, intt_w2_r, intt_w3_r;
+reg          intt_stageA_en, intt_stageB_en, intt_stageC_en;
+
+wire [DW-1:0] intt_a0_half, intt_v1, intt_v2, intt_v3;
+wire [DW-1:0] intt_a0_half_w, intt_v2_div2_w, intt_v1_div2_w, intt_v3_div2_w;
+MA   u_intt_a0   (.MA_a(intt_u0_r), .MA_b(intt_u1_r), .MA_s(intt_a0_half));
+Div2 u_intt_a0_d (.x(intt_a0_half), .y(intt_a0_half_w));
+MS   u_intt_v2_0 (.MS_a(intt_u0_r), .MS_b(intt_u1_r), .MS_s(intt_v2));
+Div2 u_intt_v2_d (.x(intt_v2), .y(intt_v2_div2_w));
+MA   u_intt_v1_0 (.MA_a(intt_u2_r), .MA_b(mul3_p), .MA_s(intt_v1));
+Div2 u_intt_v1_d (.x(intt_v1), .y(intt_v1_div2_w));
+MS   u_intt_v3_0 (.MS_a(intt_u2_r), .MS_b(mul3_p), .MS_s(intt_v3));
+Div2 u_intt_v3_d (.x(intt_v3), .y(intt_v3_div2_w));
+
+reg [DW-1:0] intt_a0_reg;
+reg [DW-1:0] intt_v1_reg, intt_v2_reg, intt_v3_reg;
+
+//====================== PWM ============================//
+wire pwm_stage0_en = (opcode == `PWM) && radix_mode;
+reg  pwm_stage1_en_d, pwm_stage2_en_d;
+
+wire [DW-1:0] pwm_s0, pwm_s1;
+MA u_pwm_s0(.MA_a(rbfu_a0), .MA_b(rbfu_a1), .MA_s(pwm_s0));
+MA u_pwm_s1(.MA_a(rbfu_b0), .MA_b(rbfu_b1), .MA_s(pwm_s1));
+
+reg [DW-1:0] pwm_s0_r, pwm_s1_r;
+reg [DW-1:0] pwm_m0_r, pwm_m1_r;
+reg [DW-1:0] pwm_tw_r;
+
+wire [DW-1:0] pwm_h0, pwm_h1, pwm_m0m1_sum;
+MA u_pwm_h0(.MA_a(pwm_m0_r), .MA_b(mul2_p), .MA_s(pwm_h0));
+MA u_pwm_m0m1(.MA_a(pwm_m0_r), .MA_b(pwm_m1_r), .MA_s(pwm_m0m1_sum));
+MS u_pwm_h1(.MS_a(mul3_p), .MS_b(pwm_m0m1_sum), .MS_s(pwm_h1));
+
+//====================== control pipeline ==============//
+always @(posedge clk) begin
+    if (rst) begin
+        r4_a0_r <= {DW{1'b0}}; r4_a1_r <= {DW{1'b0}}; r4_a2_r <= {DW{1'b0}}; r4_a3_r <= {DW{1'b0}};
+        r4_ntt_en_d1 <= 1'b0; r4_ntt_en_d2 <= 1'b0;
+        r4_t0_ff <= {DW{1'b0}}; r4_t1_ff <= {DW{1'b0}}; r4_t2_ff <= {DW{1'b0}}; r4_t3_reg <= {DW{1'b0}}; r4_t4_ff <= {DW{1'b0}};
+
+        intt_u0_r <= {DW{1'b0}}; intt_u1_r <= {DW{1'b0}}; intt_u2_r <= {DW{1'b0}};
+        intt_w1_r <= {DW{1'b0}}; intt_w2_r <= {DW{1'b0}}; intt_w3_r <= {DW{1'b0}};
+        intt_stageA_en <= 1'b0; intt_stageB_en <= 1'b0; intt_stageC_en <= 1'b0;
+        intt_a0_reg <= {DW{1'b0}}; intt_v1_reg <= {DW{1'b0}}; intt_v2_reg <= {DW{1'b0}}; intt_v3_reg <= {DW{1'b0}};
+
+        pwm_s0_r <= {DW{1'b0}}; pwm_s1_r <= {DW{1'b0}}; pwm_m0_r <= {DW{1'b0}}; pwm_m1_r <= {DW{1'b0}}; pwm_tw_r <= {DW{1'b0}};
+        pwm_stage1_en_d <= 1'b0; pwm_stage2_en_d <= 1'b0;
+
+        rad2_a0_r <= {DW{1'b0}}; rad2_a1_r <= {DW{1'b0}}; rad2_a0_ff <= {DW{1'b0}}; rad2_a1_ff <= {DW{1'b0}};
+        rad2_b0_r <= {DW{1'b0}}; rad2_b1_r <= {DW{1'b0}}; rad2_w0_r <= {DW{1'b0}}; rad2_w1_r <= {DW{1'b0}};
+        rad2_ntt_en_d <= 1'b0; rad2_ntt_en_ff <= 1'b0;
+        rad2_intt_en_d <= 1'b0; rad2_intt_en_ff <= 1'b0;
+        rad2_sum0_div2_r <= {DW{1'b0}}; rad2_sum1_div2_r <= {DW{1'b0}};
+        rad2_sum0_div2_ff <= {DW{1'b0}}; rad2_sum1_div2_ff <= {DW{1'b0}};
+        rad2_sub0_div2_r <= {DW{1'b0}}; rad2_sub1_div2_r <= {DW{1'b0}};
+    end else begin
+        // RAD4 NTT input capture
+        r4_ntt_en_d1 <= (opcode == `NTT) && radix_mode;
+        r4_ntt_en_d2 <= r4_ntt_en_d1;
+        if ((opcode == `NTT) && radix_mode) begin
+            r4_a0_r <= rbfu_a0;
+            r4_a1_r <= rbfu_b0;
+            r4_a2_r <= rbfu_a1;
+            r4_a3_r <= rbfu_b1;
+        end
+
+        // RAD4 NTT stage compute alignment
+        if (r4_ntt_en_d1) begin
+            r4_t0_ff <= r4_t0;
+            r4_t1_ff <= r4_t1;
+            r4_t2_ff <= r4_t2;
+            r4_t3_reg <= r4_t3;
+        end else begin
+            r4_t0_ff <= r4_t0_ff;
+            r4_t1_ff <= r4_t1_ff;
+            r4_t2_ff <= r4_t2_ff;
+            r4_t3_reg <= r4_t3_reg;
+        end
+        if (r4_ntt_en_d2) begin
+            r4_t4_ff <= mul3_p;
+        end else begin
+            r4_t4_ff <= r4_t4_ff;
+        end
+
+        // RAD4 INTT pipeline
+        intt_stageA_en <= (opcode == `INTT) && radix_mode;
+        intt_stageB_en <= intt_stageA_en;
+        intt_stageC_en <= intt_stageB_en;
+        if ((opcode == `INTT) && radix_mode) begin
+            intt_u0_r <= intt_u0_div2;
+            intt_u1_r <= intt_u1_div2;
+            intt_u2_r <= intt_u2_div2;
+            intt_w1_r <= rbfu_w0;
+            intt_w2_r <= rbfu_w1;
+            intt_w3_r <= rbfu_w2;
+        end
+        if (intt_stageB_en) begin
+            intt_a0_reg <= intt_a0_half_w;
+            intt_v1_reg <= intt_v1_div2_w;
+            intt_v2_reg <= intt_v2_div2_w;
+            intt_v3_reg <= intt_v3_div2_w;
+        end
+
+        // PWM pipeline enables
+        pwm_stage1_en_d <= pwm_stage0_en;
+        pwm_stage2_en_d <= pwm_stage1_en_d;
+        if (pwm_stage0_en) begin
+            pwm_s0_r <= pwm_s0;
+            pwm_s1_r <= pwm_s1;
+            pwm_tw_r <= rbfu_tw_pwm;
+        end
+        if (pwm_stage1_en_d) begin
+            pwm_m0_r <= mul0_p;
+            pwm_m1_r <= mul1_p;
+        end
+
+        // RAD2 alignment
+        rad2_ntt_en_d <= (!radix_mode) && (opcode == `NTT);
+        rad2_ntt_en_ff <= rad2_ntt_en_d;
+        rad2_intt_en_d <= (!radix_mode) && (opcode == `INTT);
+        rad2_intt_en_ff <= rad2_intt_en_d;
+        rad2_a0_ff <= rad2_a0_r;
+        rad2_a1_ff <= rad2_a1_r;
+        if (!radix_mode) begin
+            rad2_a0_r <= rbfu_a0;
+            rad2_a1_r <= rbfu_a1;
+            rad2_b0_r <= rbfu_b0;
+            rad2_b1_r <= rbfu_b1;
+            rad2_w0_r <= rbfu_w0;
+            rad2_w1_r <= rbfu_w1;
+        end
+        rad2_sum0_div2_ff <= rad2_sum0_div2_r;
+        rad2_sum1_div2_ff <= rad2_sum1_div2_r;
+        if ((!radix_mode) && (opcode == `INTT)) begin
+            rad2_sum0_div2_r <= rad2_sum0_div2;
+            rad2_sum1_div2_r <= rad2_sum1_div2;
+            rad2_sub0_div2_r <= rad2_sub0_div2;
+            rad2_sub1_div2_r <= rad2_sub1_div2;
+        end
+    end
 end
 
-//o0 延迟链,延迟一级
-wire [`DATA_WIDTH-1:0] o0_ff4;
-wire [`DATA_WIDTH-1:0] o1_ff4;
-shift#(.SHIFT(`L),.data_width(`DATA_WIDTH)) REBFU_O0_shfit(.clk(clk),.rst(rst),.din(o0),.dout(o0_ff4));
-shift#(.SHIFT(`L),.data_width(`DATA_WIDTH)) REBFU_O1_shfit(.clk(clk),.rst(rst),.din(o1),.dout(o1_ff4));
+//====================== mul input selection ===========//
+always @(*) begin
+    mul0_a = {DW{1'b0}}; mul0_b = {DW{1'b0}};
+    mul1_a = {DW{1'b0}}; mul1_b = {DW{1'b0}};
+    mul2_a = {DW{1'b0}}; mul2_b = {DW{1'b0}};
+    mul3_a = {DW{1'b0}}; mul3_b = {DW{1'b0}};
 
-wire [`DATA_WIDTH-1:0] w0_temp;
-wire [`DATA_WIDTH-1:0] w1_temp;
-assign w0_temp = opcode ==`PWM0 || opcode ==`PWM1? a0 : w0;
-assign w1_temp = opcode ==`PWM0 ? b0 : w1;
-
-//Modmul模乘器
-wire [`DATA_WIDTH-1:0] R0;
-wire [`DATA_WIDTH-1:0] R1;
-Modmul u_Modmul0(.clk(clk),.A(e0),.B(w0_temp),.R(R0));
-Modmul u_Modmul1(.clk(clk),.A(e1),.B(w1_temp),.R(R1));
-wire [`DATA_WIDTH-1:0] R0_ff1;
-wire [`DATA_WIDTH-1:0] R1_ff1;
-assign R0_ff1 = R0;
-assign R1_ff1 = R1;
-
-//add1 输入输出
-wire [`DATA_WIDTH-1: 0] ma1_a0 ;
-wire [`DATA_WIDTH-1: 0] ma1_b0 , ma1_s0;
-wire [`DATA_WIDTH-1: 0] ma1_a1 ;
-wire [`DATA_WIDTH-1: 0] ma1_b1 , ma1_s1;
-
-assign ma1_a0 = o0_ff4;
-assign ma1_b0 = R0_ff1;
-assign ma1_a1 = o1_ff4;
-assign ma1_b1 = R1_ff1;
-MA u_MA10(.MA_a(ma1_a0),.MA_b(ma1_b0),.MA_s(ma1_s0));
-MA u_MA11(.MA_a(ma1_a1),.MA_b(ma1_b1),.MA_s(ma1_s1));
-
-//sub1 输入输出
-wire [`DATA_WIDTH-1:0] ms1_a0, ms1_b0;
-wire [`DATA_WIDTH-1:0] ms1_s0;
-wire [`DATA_WIDTH-1:0] ms1_a1, ms1_b1;
-wire [`DATA_WIDTH-1:0] ms1_s1;
-
-assign ms1_a0 = o0_ff4;
-assign ms1_b0 = R0_ff1;
-assign ms1_a1 = o1_ff4;
-assign ms1_b1 = R1_ff1;
-MS u_MS10(.MS_a(ms1_a0),.MS_b(ms1_b0),.MS_s(ms1_s0));
-MS u_MS11(.MS_a(ms1_a1),.MS_b(ms1_b1),.MS_s(ms1_s1));
-
-//******************** div2 ************************//
-wire [`DATA_WIDTH-1:0] sum_div0;
-wire [`DATA_WIDTH-1:0] sub_div0;
-wire [`DATA_WIDTH-1:0] sum_div1;
-wire [`DATA_WIDTH-1:0] sub_div1;
-Div2 u_Div00(.x(o0_ff4),.y(sum_div0));
-Div2 u_Div01(.x(R0_ff1),.y(sub_div0));
-Div2 u_Div10(.x(o1_ff4),.y(sum_div1));
-Div2 u_Div11(.x(R1_ff1),.y(sub_div1));
-//******************** out *************************//
-wire [`DATA_WIDTH-1:0] ma1_s0_ff;
-wire [`DATA_WIDTH-1:0] ms1_s0_ff;
-wire [`DATA_WIDTH-1:0] sum_div0_ff;
-wire [`DATA_WIDTH-1:0] sub_div0_ff;
-wire [`DATA_WIDTH-1:0] o0_ff5;
-wire [`DATA_WIDTH-1:0] R0_ff2;
-
-assign ma1_s0_ff  =  ma1_s0  ;
-assign ms1_s0_ff  =  ms1_s0  ;
-assign sum_div0_ff=  sum_div0;
-assign sub_div0_ff=  sub_div0;
-assign o0_ff5     =  o0_ff4  ;
-assign R0_ff2     =  R0_ff1  ;
-
-wire [`DATA_WIDTH-1:0] ma1_s1_ff;
-wire [`DATA_WIDTH-1:0] ms1_s1_ff;
-wire [`DATA_WIDTH-1:0] sum_div1_ff;
-wire [`DATA_WIDTH-1:0] sub_div1_ff;
-wire [`DATA_WIDTH-1:0] o1_ff5;
-wire [`DATA_WIDTH-1:0] R1_ff2;  
-
-assign ma1_s1_ff  = ma1_s1  ;
-assign ms1_s1_ff  = ms1_s1  ;
-assign sum_div1_ff= sum_div1;
-assign sub_div1_ff= sub_div1;
-assign o1_ff5     = o1_ff4  ;
-assign R1_ff2     = R1_ff1  ;
-
-reg [`DATA_WIDTH-1:0] out0, out1;
-reg [`DATA_WIDTH-1:0] out2, out3;
-
-always@(*)
-begin
     case(opcode)
-    `NTT  : begin out0 = ma1_s0_ff   ; out1 = ms1_s0_ff         ; out2 = ma1_s1_ff         ; out3 = ms1_s1_ff  ;end
-    `INTT : begin out0 = sum_div0_ff ; out1 = sub_div0_ff       ; out2 = sum_div1_ff       ; out3 = sub_div1_ff;end
-    `PWM0 : begin out0 = o0_ff5      ; out1 = o1_ff5            ; out2 = R0_ff2            ; out3 = R1_ff2     ;end
-    `PWM1 : begin out0 = ma1_s1_ff   ; out1 = 12'd3329-ms1_s0_ff; out2 =12'd0              ; out3 = 12'd0      ;end
-    default : begin out0 = 12'd0     ; out1 = 12'd0             ; out2 = 12'd0             ; out3 = 12'd0      ;end
+        `NTT: begin
+            if (radix_mode) begin
+                mul0_a = r4_in_a2; mul0_b = rbfu_w1; // a2*w2
+                mul1_a = r4_in_a1; mul1_b = rbfu_w0; // a1*w1
+                mul2_a = r4_in_a3; mul2_b = rbfu_w2; // a3*w3
+                mul3_a = r4_t3_reg; mul3_b = I_CONST; // T3*I
+            end else begin
+                mul0_a = rad2_b0_r; mul0_b = rad2_w0_r;
+                mul1_a = rad2_b1_r; mul1_b = rad2_w1_r;
+            end
+        end
+        `INTT: begin
+            if (radix_mode) begin
+                mul3_a = intt_d_div2; mul3_b = I_INV;
+                if (intt_stageB_en) begin
+                    mul0_a = intt_v2_reg; mul0_b = intt_w2_r;
+                    mul1_a = intt_v1_reg; mul1_b = intt_w1_r;
+                    mul2_a = intt_v3_reg; mul2_b = intt_w3_r;
+                end
+            end else begin
+                mul0_a = rad2_sub0_div2; mul0_b = rad2_w0_r;
+                mul1_a = rad2_sub1_div2; mul1_b = rad2_w1_r;
+            end
+        end
+        `PWM: begin
+            if (radix_mode) begin
+                mul0_a = rbfu_a0; mul0_b = rbfu_b0;
+                mul1_a = rbfu_a1; mul1_b = rbfu_b1;
+                mul2_a = pwm_m1_r; mul2_b = pwm_tw_r;
+                mul3_a = pwm_s0_r; mul3_b = pwm_s1_r;
+            end
+        end
+        default: begin end
     endcase
 end
 
-assign Dout0 = out0;
-assign Dout1 = out1;
-assign Dout2 = out2;
-assign Dout3 = out3;
-endmodule
+//====================== outputs ========================//
+reg [DW-1:0] out0_r, out1_r, out2_r, out3_r;
+always @(*) begin
+    out0_r = {DW{1'b0}}; out1_r = {DW{1'b0}}; out2_r = {DW{1'b0}}; out3_r = {DW{1'b0}};
+    case(opcode)
+        `NTT: begin
+            if (radix_mode) begin
+                if (r4_ntt_en_d2) begin
+                    out0_r = r4_y0; out1_r = r4_y2; out2_r = r4_y1; out3_r = r4_y3;
+                end
+            end else begin
+                if (rad2_ntt_en_d) begin
+                    out0_r = rad2_ma0_s; out1_r = rad2_ms0_s; out2_r = rad2_ma1_s; out3_r = rad2_ms1_s;
+                end
+            end
+        end
+        `INTT: begin
+            if (radix_mode) begin
+                if (intt_stageC_en) begin
+                    out0_r = intt_a0_reg;
+                    out1_r = mul1_p;
+                    out2_r = mul0_p;
+                    out3_r = mul2_p;
+                end
+            end else begin
+                if (rad2_intt_en_d) begin
+                    out0_r = rad2_sum0_div2_ff; out1_r = mul0_p; out2_r = rad2_sum1_div2_ff; out3_r = mul1_p;
+                end
+            end
+        end
+        `PWM: begin
+            if (radix_mode && pwm_stage2_en_d) begin
+                out0_r = pwm_h0; out1_r = pwm_h1; out2_r = {DW{1'b0}}; out3_r = {DW{1'b0}};
+            end
+        end
+        default: begin end
+    endcase
+end
 
-    
+assign Dout0 = out0_r;
+assign Dout1 = out1_r;
+assign Dout2 = out2_r;
+assign Dout3 = out3_r;
+
+endmodule
 `endif
