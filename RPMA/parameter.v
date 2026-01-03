@@ -5,12 +5,12 @@
 // `define OP2  //P=8时    
 // `define OP3  //P=16时
 
-// `define PIPE1  //L=1时
+`define PIPE1  //L=1时
 // `define PIPE2  //L=2时
 // `define PIPE3  //L=3时
 // `define PIPE4  //L=4时
 // `define PIPE5  //L=5时
-`define PIPE6  //L=6时
+// `define PIPE6  //L=6时
 // `define PIPE7  //L=7时
 // `define PIPE8  //L=8时
 
